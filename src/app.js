@@ -8,10 +8,4 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Root route
-// app.use("/admin");
-
-// Start the server
-
-
 export { app };
