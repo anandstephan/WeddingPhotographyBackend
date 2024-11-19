@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const eventSchema = new mongoose.Schema({
   name: {
@@ -11,7 +11,12 @@ const eventSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
 });
 
-const User = mongoose.model("event", eventSchema);
-module.exports = User;
+const Events = mongoose.model("event", eventSchema);
+export { Events };
