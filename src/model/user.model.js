@@ -10,15 +10,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    match: /^\d{10}$/, // Validates 10-digit phone numbers
+    match: /^\d{10}$/,
   },
   OTP: {
     type: String,
-    default: "1234", // Default OTP value
+    default: "1234",
   },
   isVerified: {
     type: Boolean,
-    default: false, // Default to false, meaning not verified
+    default: false,
   },
   userType: {
     type: String,
