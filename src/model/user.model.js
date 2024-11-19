@@ -12,9 +12,13 @@ const userSchema = new mongoose.Schema({
     unique: true,
     match: /^\d{10}$/, // Validates 10-digit phone numbers
   },
-  password: {
+  OTP: {
     type: String,
-    required: true,
+    default: "1234", // Default OTP value
+  },
+  isVerified: {
+    type: Boolean,
+    default: false, // Default to false, meaning not verified
   },
   userType: {
     type: String,
