@@ -2,6 +2,7 @@ import { User } from "../model/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { createAccessOrRefreshToken } from "../utils/helper.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   try {
@@ -63,9 +64,34 @@ const loginUser = asyncHandler(async (req, res) => {
       throw new ApiError(401, "Invalid OTP");
     }
 
+    let { accessToken, refreshToken } = await createAccessOrRefreshToken(
+      phoneNumber
+    );
+
+    const options = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      // maxAge: 24 * 60 * 60 * 1000, // 1 day/
+    };
+
+    const LoggedInUser = await User.findById(user._id).select("-password");
+
     return res
       .status(200)
-      .json(new ApiResponse(200, user, "User logged in successfully"));
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          {
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            user: LoggedInUser,
+          },
+          "User logged in successfully"
+        )
+      );
   } catch (error) {
     return res.status(error.status || 500).json({
       message: error.message || "Something went wrong while logging in",
