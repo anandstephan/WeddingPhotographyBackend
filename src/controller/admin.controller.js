@@ -42,9 +42,10 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
+  console.log("jjj");
   try {
     const { phoneNumber, OTP } = req.body;
-
+    console.log("==", req.body);
     if ([phoneNumber, OTP].some((field) => field?.trim() === "")) {
       throw new ApiError(400, "Phone number and OTP are required");
     }
