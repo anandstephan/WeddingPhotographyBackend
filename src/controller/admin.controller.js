@@ -48,19 +48,16 @@ const loginUser = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Phone number and OTP are required");
     }
 
-    // Find the user by phone number
     const user = await User.findOne({ phoneNumber });
 
     if (!user) {
       throw new ApiError(404, "User not found");
     }
 
-    // Check if the user has been verified or not
     if (!user.isVerified) {
       throw new ApiError(403, "User is not verified yet");
     }
 
-    // Verify OTP (Here, we assume OTP is still '1234' by default; you can modify this to verify dynamically)
     if (user.OTP !== OTP) {
       throw new ApiError(401, "Invalid OTP");
     }
@@ -75,4 +72,30 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser };
+const createClient = asyncHandler(async (req, res) => {
+  try {
+    const [number] = req.body;
+
+    const photographer = await findOne(number);
+
+    if (!photographer) {
+      throw new ApiError(
+        404,
+        "User not found. Check the number you have entered"
+      );
+    }
+
+    const { id, phoneNumber } = photographer;
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, { id }, "Photographer found"));
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, null, "Internal server error"));
+  }
+});
+
+export { registerUser, loginUser, createClient };
