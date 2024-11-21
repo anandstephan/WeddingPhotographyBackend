@@ -64,7 +64,7 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     let { accessToken, refreshToken } = await createAccessOrRefreshToken(
-      phoneNumber
+      user._id
     );
 
     const options = {
@@ -97,6 +97,8 @@ const loginUser = asyncHandler(async (req, res) => {
     });
   }
 });
+
+
 
 const createClient = asyncHandler(async (req, res) => {
   try {

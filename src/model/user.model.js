@@ -32,5 +32,17 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+userSchema.methods.generateAccessToken = function () {
+  return jwt.sign({ userId: this._id }, process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: "15m",
+  });
+};
+
+userSchema.methods.generateRefreshToken = function () {
+  return jwt.sign({ userId: this._id }, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: "7d",
+  });
+};
+
 const User = mongoose.model("User", userSchema);
 export { User };

@@ -1,6 +1,6 @@
-import { User } from "../model/user.model";
-
 /*------------------------------------------to generate tokens-------------------------------------------*/
+
+import { User } from "../model/user.model.js";
 
 export const createAccessOrRefreshToken = async (user_id) => {
   const user = await User.findById(user_id);
