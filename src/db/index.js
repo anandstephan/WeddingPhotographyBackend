@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 const DB_URI = process.env.DB_URI || "mongodb://127.0.0.1:27017/test";
+console.log("Conseddddd", DB_URI);
 async function connectDB() {
   try {
     await mongoose.connect(DB_URI);
