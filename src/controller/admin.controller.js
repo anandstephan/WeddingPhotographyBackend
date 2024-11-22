@@ -42,7 +42,6 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-  console.log("jjj");
   try {
     const { phoneNumber, OTP } = req.body;
     console.log("==", req.body);
@@ -98,8 +97,6 @@ const loginUser = asyncHandler(async (req, res) => {
     });
   }
 });
-
-
 
 const createClient = asyncHandler(async (req, res) => {
   try {
