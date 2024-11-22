@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 
-const DB_URI = process.env.DB_URI || "mongodb://127.0.0.1:27017/test";
+const DB_URI =
+  process.env.DB_URI ||
+  "mongodb+srv://wedding:wedding@wedding.5o4lt.mongodb.net/?retryWrites=true&w=majority&appName=wedding";
 console.log("Conseddddd", DB_URI);
 async function connectDB() {
   try {
