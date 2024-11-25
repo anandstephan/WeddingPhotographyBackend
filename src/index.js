@@ -8,13 +8,13 @@ dotenv.config({
 
 app.use(
   cors({
-    origin: "http://localhost:6000", // Replace with your frontend URL
+    origin: "http://localhost:3000", // Replace with your frontend URL
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true, // Include credentials if necessary (e.g., cookies)
   })
 );
 connectDB()
-  .then(() => { 
+  .then(() => {
     app.listen(process.env.PORT || 8000, () => {
       console.log(`⚙️ Server is running at port : ${process.env.PORT}`);
     });

@@ -98,6 +98,38 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
+const fetchUser = asyncHandler(async (req, res) => {
+  try {
+    const { type } = req.body;
+
+    if (!type) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Please provide a user type in the query parameter (e.g., ?type=admin).",
+      });
+    }
+
+    if (!["admin", "photographer", "user"].includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid user type. Allowed values are 'admin', 'photographer', 'user'.`,
+      });
+    }
+
+    const users = await User.find({ userType: type });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, users, "User Fetch Successfully"));
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json(new ApiResponse(500, error, "Internal server error"));
+  }
+});
+
 const createClient = asyncHandler(async (req, res) => {
   try {
     const [number] = req.body;
@@ -123,5 +155,4 @@ const createClient = asyncHandler(async (req, res) => {
       .json(new ApiResponse(500, null, "Internal server error"));
   }
 });
-
-export { registerUser, loginUser, createClient };
+export { registerUser, loginUser, createClient, fetchUser };
