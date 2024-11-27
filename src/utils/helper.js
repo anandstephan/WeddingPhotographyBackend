@@ -20,5 +20,17 @@ const isValidObjectId = (id) => {
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+/*------------------------------------------to send mail-------------------------------------------*/
 
-export { createAccessOrRefreshToken, isValidObjectId, generateOTP }
+const sendMail = (receiverEmail, subject, htmlContent) => {
+  const options = mailOptions(receiverEmail, subject, htmlContent);
+  transporter.sendMail(options, (error, info) => {
+    if (error) {
+      console.log("Error while sending email:", error);
+    } else {
+      console.log("Email sent successfully:", info.response);
+    }
+  });
+};
+
+export { createAccessOrRefreshToken, isValidObjectId, generateOTP, sendMail }
