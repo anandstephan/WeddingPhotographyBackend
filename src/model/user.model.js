@@ -1,46 +1,67 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
     trim: true,
   },
-  phoneNumber: {
+  mobile: {
     type: String,
     required: true,
     unique: true,
     match: /^\d{10}$/,
   },
-  OTP: {
-    type: String,
-    default: "1234",
+  isMobileVerified:{
+    type: Boolean,
+    default: false,
   },
-  isVerified: {
+  email:{
+    type: String,
+    required: true,
+    unique: true,
+    match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  },
+  isEmailVerified: {
     type: Boolean,
     default: false,
   },
   refreshToken: { type: String, select: false },
-  userType: {
+  role: {
     type: String,
     enum: ["admin", "photographer", "user"],
     required: true,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+},{timestamps:true});
+
+
+userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+
+  if (!this.password) {
+      const existingUser = await User.findById(this._id).select('password');
+      if (existingUser) {
+          this.password = existingUser.password;
+      }
+  } else {
+      this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
 });
 
+// Custom Instance Methods
+userSchema.methods.isPasswordCorrect = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign({ userId: this._id }, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "15m",
+    expiresIn:process.env.ACCESS_TOKEN_EXPIRY,
   });
 };
-
 userSchema.methods.generateRefreshToken = function () {
   return jwt.sign({ userId: this._id }, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: "7d",
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
   });
 };
 

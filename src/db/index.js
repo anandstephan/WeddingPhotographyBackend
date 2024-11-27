@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { logger } from "../config/logger.js";
 
 const DB_URI =
   process.env.DB_URI ||
@@ -6,9 +7,13 @@ const DB_URI =
 async function connectDB() {
   try {
     await mongoose.connect(DB_URI);
-    console.log("Connected to MongoDB!");
+    logger.info(
+      ` data base connected with mongoDb`.blue
+    );
   } catch (err) {
-    console.error("Failed to connect to MongoDB:", err.message);
+    logger.info(
+      `⚙️ faild to connect with MONGO DB`.green
+    );
   }
 }
 

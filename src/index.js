@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import connectDB from "./db/index.js";
 import { app } from "./app.js";
 import cors from "cors";
+import { logger } from "./config/logger.js";
 dotenv.config({
   path: "./.env",
 });
@@ -13,12 +14,27 @@ app.use(
     credentials: true, // Include credentials if necessary (e.g., cookies)
   })
 );
-connectDB()
-  .then(() => {
-    app.listen(process.env.PORT || 8000, () => {
-      console.log(`⚙️ Server is running at port : ${process.env.PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.log("MONGO db connection failed !!! ", err);
-  });
+// connectDB()
+//   .then(() => {
+//     app.listen(process.env.PORT || 8000, () => {
+//       console.log(`⚙️ Server is running at port : ${process.env.PORT}`);
+//     });
+//   })
+//   .catch((err) => {
+//     console.log("MONGO db connection failed !!! ", err);
+//   });
+
+  const startServer = async () => {
+    try {
+      await connectDB();
+      app.listen(process.env.PORT || 8000, () => {
+        logger.info(
+          `⚙️  Server is running at http://localhost:${process.env.PORT}`.green
+        );
+      });
+    } catch (err) {
+      logger.error(`Failed to start the server: ${err.message}`);
+      process.exit(1);
+    }
+  };
+  startServer()

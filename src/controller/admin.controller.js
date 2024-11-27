@@ -1,14 +1,14 @@
 import { User } from "../model/user.model.js";
-import { ApiError } from "../utils/ApiError.js";
+import ApiError from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
+import asyncHandler from "../utils/asyncHandler.js";
 import { createAccessOrRefreshToken } from "../utils/helper.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   try {
-    const { name, phoneNumber, userType } = req.body;
+    const { name, email, mobile, role,isEmailVerified,isMobileVerified,password } = req.body;
 
-    if ([name, phoneNumber, userType].some((field) => field?.trim() === "")) {
+    if ([name, phoneNumber, role].some((field) => field?.trim() === "")) {
       throw new ApiError(400, "All fields are required");
     }
     const existedUser = await User.findOne({
@@ -21,7 +21,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const user = await User.create({
       name,
       phoneNumber,
-      userType,
+      role,
     });
 
     const createdUser = await User.findById(user._id);
@@ -117,7 +117,7 @@ const fetchUser = asyncHandler(async (req, res) => {
       });
     }
 
-    const users = await User.find({ userType: type });
+    const users = await User.find({ role: type });
 
     return res
       .status(200)
