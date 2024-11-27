@@ -31,8 +31,6 @@ app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 
 
-import adminRouter from "./routes/admin.route.js";
-
 // Logging Middleware
 app.use((req, res, next) => {
     const startTime = process.hrtime();
@@ -56,8 +54,8 @@ app.use((req, res, next) => {
 });
 
 /*----------------------------------------------Routes------------------------------------------*/
-
-app.use("/api/v1/admin", adminRouter);
+import integratedRoutes from "./routes/integrated.routes.js";
+app.use("/api", integratedRoutes);
 
 app.use((request, response) => {
     response.status(404).json({ success: false, message: "Route Not Found" });

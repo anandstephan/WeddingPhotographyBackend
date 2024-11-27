@@ -1,5 +1,5 @@
-import OTP from "../models/otpModel.js";
-import { generateOTP } from "./helpers.js";
+import { OTP } from "../model/otpModel.js";
+import { generateOTP } from "./helper.js";
 
 const createAndStoreOtp = async (identifier, type) => {
   try {

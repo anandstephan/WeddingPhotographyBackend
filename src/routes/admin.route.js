@@ -1,14 +1,22 @@
 import { Router } from "express";
 import {
   fetchUser,
-  loginUser,
-  registerUser,
+  getCurrentUser,
+  logoutUser,
+  changeCurrentPassword,
+  refreshAccessToken,
+  updateAccountDetails
 } from "../controller/admin.controller.js";
 
 const router = Router();
 
-router.route("/createUser").post(registerUser);
-router.route("/login").post(loginUser);
 router.route("/fetchUser").post(fetchUser);
+router.get("/get-current-user", getCurrentUser);
+router.put("/update-user", updateAccountDetails);
+router.get("/logout", logoutUser);
+router.put("/change-current-password", changeCurrentPassword);
+router.get("/refresh-access-token", refreshAccessToken);
+router.put("/update-user", updateAccountDetails);
+
 
 export default router;

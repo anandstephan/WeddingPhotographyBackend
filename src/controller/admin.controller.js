@@ -104,6 +104,37 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 });
 
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { _id } = req.user?._id;
+  if (!isValidObjectId(_id)) {
+    return res.status(400).json(new ApiError(400, null, "Invalid user ID"));
+  }
+
+  const {
+    name,
+    email,
+    isEmailVerified,
+  } = req.body;
+
+  const existingUser = await User.findById(_id);
+  if (!existingUser)
+    return res.status(404).json(new ApiError(404, null, "User not found!"));
+
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        name,
+        email,
+        isEmailVerified
+      }
+    },
+    { new: true }
+  ).select("-password")
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "user updated successfully"));
+})
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
@@ -295,4 +326,4 @@ const createClient = asyncHandler(async (req, res) => {
       .json(new ApiResponse(500, null, "Internal server error"));
   }
 });
-export { registerUser, loginUser, getCurrentUser, loginWithMobile, logoutUser, refreshAccessToken, changeCurrentPassword, createClient, fetchUser, userValidations };
+export { registerUser, loginUser, getCurrentUser, loginWithMobile, logoutUser, refreshAccessToken, changeCurrentPassword, createClient, fetchUser, userValidations, updateAccountDetails };
