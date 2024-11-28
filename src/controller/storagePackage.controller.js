@@ -5,7 +5,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { isValidObjectId } from "../utils/helper.js";
 
 /*--------------------------------------------inputValidator------------------------------------------*/
-const userValidations = [
+const inputValidations = [
     check("name")
         .notEmpty().withMessage(" Name is required!")
         .isAlpha().withMessage("Name should contain only alphabetic characters."),
@@ -113,4 +113,4 @@ const deleteStoragePackage = asyncHandler(async (req, res) => {
 
 
 
-export { createStoragePackage, userValidations, getStoragePackages, updateStoragePackage, deleteStoragePackage }
+export { createStoragePackage, inputValidations, getStoragePackages, updateStoragePackage, deleteStoragePackage }
