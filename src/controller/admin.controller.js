@@ -7,8 +7,8 @@ import { check, validationResult } from "express-validator"
 
 const userValidations = [
   check("name")
-    .notEmpty().withMessage("First Name is required!")
-    .isAlpha().withMessage("First Name should contain only alphabetic characters."),
+    .notEmpty().withMessage("Name is required!")
+    .isAlpha().withMessage("Name should contain only alphabetic characters."),
   check("password")
     .notEmpty().withMessage("password is required!"),
   check("email")
