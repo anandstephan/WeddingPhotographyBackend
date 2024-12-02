@@ -26,6 +26,7 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.16",
     "nodemon": "^3.1.7",
+    "razorpay": "^2.9.5",
     "winston": "^3.17.0"
   }
 }
