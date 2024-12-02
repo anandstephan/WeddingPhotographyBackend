@@ -45,14 +45,23 @@ const updateProfile = asyncHandler(async (req, res) => {
 
 const getProfilebyId = asyncHandler(async (req, res) => {
     const id = req.user._id;
+    const profile = await PhotographerProfile.findOne({ userId: id })
+        .populate("userId", "name mobile email role");
 
-    const profile = await PhotographerProfile.findOne({ userId: id });
     if (!profile) {
         throw new ApiError(404, 'Photographer profile not found');
     }
-    res.status(200).json(new ApiResponse(200, profile, "Profile fetched successfully!"));
+    const profileObj = profile.toObject();
+    const flattenedProfile = {
+        ...profileObj,
+        ...profileObj.userId,
+        userId: profileObj.userId._id,
+    };
+    delete flattenedProfile.userId._id;
+    delete flattenedProfile._id;
+    res.status(200).json(new ApiResponse(200, flattenedProfile, "Profile fetched successfully!"));
+});
 
-})
 
 const deleteProfile = asyncHandler(async (req, res) => {
     const userId = req.user._id;

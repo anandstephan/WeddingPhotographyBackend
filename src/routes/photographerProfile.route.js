@@ -1,4 +1,5 @@
 import express from 'express';
+import { multerUpload } from '../middlewere/multer.middlewere.js';
 import { createProfile,getProfilebyId,updateProfile,deleteProfile } from '../controller/photographerProfile.controller.js';
 
 const photographerProfilerouter = express.Router();

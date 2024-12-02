@@ -9,6 +9,11 @@ const storagePackageSchema = new mongoose.Schema({
         type: Number,
         required: true // in GB
     },
+    unit:{
+        type: String,
+        enum: ['GB', 'TB'],
+        default: 'GB'
+    },
     price: {
         type: Number,
         required: true
@@ -16,6 +21,11 @@ const storagePackageSchema = new mongoose.Schema({
     duration: {
         type: Number,
         required: true // in months
+    },
+    durationUnit: {
+        type: String,
+        enum: ['months', 'years'],
+        default: 'years'
     },
     isActive: {
         type: Boolean,

@@ -16,7 +16,6 @@ router.put("/update-user", updateAccountDetails);
 router.get("/logout", logoutUser);
 router.put("/change-current-password", changeCurrentPassword);
 router.get("/refresh-access-token", refreshAccessToken);
-router.put("/update-user", updateAccountDetails);
 
 
 export default router;

@@ -11,12 +11,12 @@ const verifyJwtToken = async (req, res, next) => {
         if (!token) {
             return res.status(400).json(new ApiError(400, "", "Token Not Found!"));
         }
-        const verified = jwt.verify(token, process.env.ACCESS_TOKEN_KEY);
+        const verified = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         if (!verified) {
             return res.status(409).json(new ApiError(409, "", "Invalid Token"));
         }
         // Find user by id
-        let user = await User.findById(verified._id).select(
+        let user = await User.findById(verified.userId).select(
             "-password -refreshToken"
         );
         if (!user) {
@@ -27,6 +27,7 @@ const verifyJwtToken = async (req, res, next) => {
         req.user = user;
         next();
     } catch (error) {
+        console.log(error);
         return res.status(401).json(new ApiError(401, "", "Unauthorized"));
     }
 };

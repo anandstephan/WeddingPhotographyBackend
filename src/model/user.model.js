@@ -13,39 +13,44 @@ const userSchema = new mongoose.Schema({
     unique: true,
     match: /^\d{10}$/,
   },
-  isMobileVerified:{
+  isMobileVerified: {
     type: Boolean,
     default: false,
   },
-  email:{
+  email: {
     type: String,
-    required: true,
     unique: true,
+    sparse: true,
     match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   },
   isEmailVerified: {
     type: Boolean,
     default: false,
   },
-  refreshToken: { type: String, select: false },
+  refreshToken: { type: String },
   role: {
     type: String,
     enum: ["admin", "photographer", "user"],
     required: true,
   },
-},{timestamps:true});
+  password: {
+    type: String,
+    required: true,
+    minlength: 8,
+  }
+}, { timestamps: true });
 
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
   if (!this.password) {
-      const existingUser = await User.findById(this._id).select('password');
-      if (existingUser) {
-          this.password = existingUser.password;
-      }
+    const existingUser = await User.findById(this._id).select('password');
+    if (existingUser) {
+      this.password = existingUser.password;
+    }
   } else {
-      this.password = await bcrypt.hash(this.password, 10);
+    this.password = await bcrypt.hash(this.password, 10);
   }
   next();
 });
@@ -56,7 +61,7 @@ userSchema.methods.isPasswordCorrect = async function (password) {
 };
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign({ userId: this._id }, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn:process.env.ACCESS_TOKEN_EXPIRY,
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
   });
 };
 userSchema.methods.generateRefreshToken = function () {

@@ -3,12 +3,12 @@ import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { isValidObjectId } from "../utils/helper.js";
+import { check, validationResult } from "express-validator";
 
 /*--------------------------------------------inputValidator------------------------------------------*/
 const inputValidations = [
     check("name")
-        .notEmpty().withMessage(" Name is required!")
-        .isAlpha().withMessage("Name should contain only alphabetic characters."),
+        .notEmpty().withMessage(" Name is required!"),
     check("price")
         .notEmpty().withMessage("price is required!"),
     check("storageLimit")
@@ -26,8 +26,11 @@ const createStoragePackage = asyncHandler(async (req, res) => {
     if (!errors.isEmpty()) {
         return res.status(400).json(new ApiError(400, "Validation Error", errors));
     }
-    const { name, storageLimit, price, duration, isActive } = req.body;
-    const packageExists = await StoragePackage.findOne({ name });
+    const { name, storageLimit, price, duration, unit, durationUnit, isActive } = req.body;
+    const packageExists = await StoragePackage.findOne({
+        name: { $regex: `^${name.trim()}$`, $options: 'i' }
+    });
+
     if (packageExists) {
         throw new ApiError(409, "Storage package with this name already exists");
     }
@@ -35,8 +38,10 @@ const createStoragePackage = asyncHandler(async (req, res) => {
     const newPackage = new StoragePackage({
         name,
         storageLimit,
+        unit,
         price,
         duration,
+        durationUnit,
         isActive,
     });
 

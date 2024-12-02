@@ -1,4 +1,6 @@
 import { User } from "../model/user.model.js";
+import mongoose from "mongoose";
+import crypto from 'crypto';
 
 /*------------------------------------------to generate tokens-------------------------------------------*/
 const createAccessOrRefreshToken = async (user_id) => {
@@ -33,4 +35,9 @@ const sendMail = (receiverEmail, subject, htmlContent) => {
   });
 };
 
-export { createAccessOrRefreshToken, isValidObjectId, generateOTP, sendMail }
+/*------------------------------------------create transaction Id------------------------------------------*/
+const generateTransactionId = () => {
+  return "TXN_"+crypto.randomBytes(6).toString('hex').toUpperCase();
+};
+
+export { createAccessOrRefreshToken, isValidObjectId, generateOTP, sendMail, generateTransactionId }

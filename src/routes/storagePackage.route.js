@@ -8,5 +8,4 @@ storagePackageRouter.get('/get/:id', getStoragePackageById)
 storagePackageRouter.delete('/delete/:id', deleteStoragePackage)
 storagePackageRouter.put('/update/:id', updateStoragePackage)
 storagePackageRouter.get('/get-all', getStoragePackages)
-
 export default storagePackageRouter;
