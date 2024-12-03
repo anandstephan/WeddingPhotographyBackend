@@ -17,4 +17,8 @@ integratedRoutes.use("/photographerProfile", verifyJwtToken, photographerProfile
 import storagePackageRouter from "./storagePackage.route.js";
 integratedRoutes.use("/storagePackage", storagePackageRouter)
 
+/*-----------------------------------------Events ------------------------------------*/
+import eventRouter from "./events.route.js";
+integratedRoutes.use("/storagePackage", eventRouter)
+
 export default integratedRoutes;
