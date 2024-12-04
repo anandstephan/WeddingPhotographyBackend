@@ -19,6 +19,11 @@ integratedRoutes.use("/storagePackage", storagePackageRouter)
 
 /*-----------------------------------------Events ------------------------------------*/
 import eventRouter from "./events.route.js";
-integratedRoutes.use("/storagePackage", eventRouter)
+integratedRoutes.use("/events", eventRouter)
+
+/*-----------------------------------------photo packages ------------------------------------*/
+
+import photoPackageRoutes from "./photoPackage.routes.js";
+integratedRoutes.use("/photoPackage",verifyJwtToken, photoPackageRoutes)
 
 export default integratedRoutes;

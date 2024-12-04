@@ -1,25 +1,38 @@
 import mongoose from "mongoose";
 
-const photosSchema = new mongoose.Schema(
+const photoDetailSchema = new mongoose.Schema(
   {
-    s3Path: {
+    eventName: {
       type: String,
       required: true,
       trim: true,
     },
-    size: {
-      type: String,
-      required: true,
-    },
-    isSelected: {
-      type: Boolean,
-      default: false,
+    photos: {
+      type: [
+        {
+          s3Path: {
+            type: String,
+            required: true,
+            trim: true,
+          },
+          size: {
+            type: String,
+            required: true,
+          },
+          isSelected: {
+            type: Boolean,
+            default: false,
+          },
+        },
+      ],
+      default: [],
     },
   },
   {
-    timestamps: true,
+    _id: false,
   }
 );
+
 
 const venueSchema = new mongoose.Schema(
   {
@@ -55,16 +68,16 @@ const venueSchema = new mongoose.Schema(
     },
   },
   {
-    _id: false,
+    _id: false, 
   }
-)
+);
 
 
 const eventSchema = new mongoose.Schema(
   {
     packageId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "UserPackage",
+      ref: "PhotoPackage",
       required: true,
     },
     userId: {
@@ -96,7 +109,7 @@ const eventSchema = new mongoose.Schema(
       default: "upcoming",
     },
     photos: {
-      type: [photosSchema],
+      type: [photoDetailSchema], 
       default: [],
     },
   },
