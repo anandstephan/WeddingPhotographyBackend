@@ -1,20 +1,10 @@
 import multer from "multer";
-import crypto from "crypto";
 import path from "path";
 import ApiError from "../utils/ApiError.js";
 
-const getUniqueFileName = () =>
-  `wedding${crypto.randomBytes(3).toString("hex")}T${Date.now()}`;
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./public/temp");
-  },
-  filename: function (req, file, cb) {
-    const ext = path.extname(file.originalname);
-    const uniqueName = `${getUniqueFileName()}-${file.fieldname}${ext}`;
-    cb(null, uniqueName);
-  },
-});
+// Use memory storage
+const storage = multer.memoryStorage();
+
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|webp|png|pdf/;
   const isValid =
@@ -22,16 +12,20 @@ const fileFilter = (req, file, cb) => {
     allowedTypes.test(file.mimetype);
 
   if (isValid) cb(null, true);
-  else cb(new ApiError(400, "", "Only JPG, WEBP, PNG are allowed"));
+  else cb(new ApiError(400, "Invalid file type", "Only JPG, WEBP, PNG are allowed"));
 };
 
+// Error handling middleware for Multer
 export const handleMulterErrors = (err, req, res, next) => {
-  if (err instanceof multer.MulterError)
-    return res.status(400).send({ error: "Field doesnt exist" });
-  else if (err instanceof ApiError) return next(err);
+  if (err instanceof multer.MulterError) {
+    return res.status(400).send({ error: "Multer error: Field doesn't exist or invalid input" });
+  } else if (err instanceof ApiError) {
+    return next(err);
+  }
   next();
 };
 
+// Multer configuration with memory storage
 export const multerUpload = multer({
   storage: storage,
   fileFilter: fileFilter,

@@ -1,6 +1,6 @@
 import { Upload } from "@aws-sdk/lib-storage";
-import { S3Client } from "@aws-sdk/client-s3";
-
+import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { extractS3KeyFromUrl } from "../utils/helper.js";
 class s3ServiceWithProgress {
     constructor() {
         this.s3Client = new S3Client({
@@ -20,7 +20,7 @@ class s3ServiceWithProgress {
                 Key: path,
                 Body: file.buffer,
                 ContentType: file.mimetype,
-                ACL: "public-read",
+                // ACL: "public-read", // Consider making this configurable
                 Metadata: {
                     "original-filename": file.originalname,
                     "upload-date": new Date().toISOString(),
@@ -28,17 +28,24 @@ class s3ServiceWithProgress {
                 ServerSideEncryption: "AES256",
             },
             queueSize: 4,
-            partSize: 5 * 1024 * 1024,
+            partSize: 5 * 1024 * 1024, // 5 MB
             leavePartsOnError: false,
         });
-    
+
+        let lastProgress = 0;
+
         if (progressCallback) {
             upload.on("httpUploadProgress", (progress) => {
-                const percentage = Math.round((progress.loaded * 100) / progress.total);
-                progressCallback(percentage);
+                const total = progress.total || file.size; // Fallback if `total` is undefined
+                const percentage = Math.round((progress.loaded * 100) / total);
+
+                if (percentage >= lastProgress + 5 || percentage === 100) {
+                    lastProgress = percentage;
+                    progressCallback(percentage);
+                }
             });
         }
-    
+
         try {
             const result = await upload.done();
             return {
@@ -54,34 +61,22 @@ class s3ServiceWithProgress {
             throw error;
         }
     }
+    async deleteFile(s3Path) {
+        const key = extractS3KeyFromUrl(s3Path)
+        try {
+            const deleteParams = {
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: key,
+            };
 
-    // Example of handling multiple files with progress tracking
-    async uploadMultipleFiles(files, progressCallback) {
-        const uploads = files.map(file => {
-            const path = `uploads/${Date.now()}_${file.originalname}`;
+            const deleteCommand = new DeleteObjectCommand(deleteParams);
+            await this.s3Client.send(deleteCommand);
 
-            const upload = new Upload({
-                client: this.s3Client,
-                params: {
-                    Bucket: process.env.AWS_BUCKET_NAME,
-                    Key: path,
-                    Body: file.buffer,
-                    ContentType: file.mimetype
-                },
-                queueSize: 2, // Limit concurrent uploads per file
-                partSize: 5 * 1024 * 1024
-            });
-
-            // Track progress for each file
-            upload.on("httpUploadProgress", (progress) => {
-                const percentage = Math.round((progress.loaded * 100) / progress.total);
-                progressCallback(file.originalname, percentage);
-            });
-
-            return upload.done();
-        });
-
-        return Promise.all(uploads);
+            console.log(`File ${key} deleted successfully.`);
+        } catch (error) {
+            console.error('Error deleting file from S3:', error.message);
+            throw new Error("Failed to delete file from S3");
+        }
     }
 }
 

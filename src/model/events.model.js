@@ -72,7 +72,6 @@ const venueSchema = new mongoose.Schema(
   }
 );
 
-
 const eventSchema = new mongoose.Schema(
   {
     packageId: {

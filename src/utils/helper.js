@@ -37,7 +37,21 @@ const sendMail = (receiverEmail, subject, htmlContent) => {
 
 /*------------------------------------------create transaction Id------------------------------------------*/
 const generateTransactionId = () => {
-  return "TXN_"+crypto.randomBytes(6).toString('hex').toUpperCase();
+  return "TXN_" + crypto.randomBytes(6).toString('hex').toUpperCase();
 };
 
-export { createAccessOrRefreshToken, isValidObjectId, generateOTP, sendMail, generateTransactionId }
+function extractS3KeyFromUrl(url) {
+  const s3Domain = 's3.ap-south-1.amazonaws.com';
+  const bucketName = 'wedding';
+
+  const regex = new RegExp(`https://${bucketName}\\.${s3Domain}/(.+)`);
+  const match = url.match(regex);
+
+  if (match && match[1]) {
+    return decodeURIComponent(match[1]);
+  }
+
+  throw new Error('Invalid S3 URL or mismatch with bucket domain');
+}
+
+export { createAccessOrRefreshToken, isValidObjectId, generateOTP, sendMail, generateTransactionId, extractS3KeyFromUrl }

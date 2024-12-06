@@ -4,6 +4,8 @@ import ApiResponse from '../utils/ApiResponse.js';
 import { Event } from '../model/events.model.js';
 import { User } from '../model/user.model.js';
 import s3ServiceWithProgress from '../config/awsS3.config.js';
+
+const s3Service = new s3ServiceWithProgress();
 /*-------------------------------------------Create Event---------------------------------------*/
 const createEvent = asyncHandler(async (req, res) => {
   const eventData = req.body;
@@ -113,6 +115,11 @@ const deleteEvent = asyncHandler(async (req, res) => {
 
 const uploadPhotos = asyncHandler(async (req, res) => {
   const { eventId } = req.params;
+  const { eventName } = req.body;
+
+  if (!eventName) {
+    throw new ApiError(400, "Event name is required");
+  }
 
   if (!req.files || req.files.length === 0) {
     throw new ApiError(400, "No files uploaded");
@@ -122,37 +129,48 @@ const uploadPhotos = asyncHandler(async (req, res) => {
   if (!event) {
     throw new ApiError(404, "Event not found");
   }
-
+  const existingEventWithSameName = event.photos.some(
+    (photo) => photo.eventName === eventName
+  );
+  if (existingEventWithSameName) {
+    throw new ApiError(400, "Event with the same name already exists in photos");
+  }
   // Set up SSE headers
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
+    Connection: "keep-alive",
   });
 
   const uploadedPhotos = [];
   const totalFiles = req.files.length;
 
+  // Handle premature client disconnection
+  let clientDisconnected = false;
+  req.on("close", () => {
+    clientDisconnected = true;
+    console.log("Client disconnected");
+    res.end();
+  });
+
   for (const [index, file] of req.files.entries()) {
-    const s3Path = `events/${eventId}/${Date.now()}_${file.originalname}`;
+    if (clientDisconnected) break;
+
+    const s3Path = `${req.user.mobile}/${eventName}_${eventId}_${file.originalname}`;
     let lastProgress = 0;
 
     try {
-      const s3Service = new s3ServiceWithProgress();
 
-      // Upload file with progress tracking
       const fileUrl = await s3Service.uploadFile(file, s3Path, (progress) => {
-        const percentage = Math.round((progress.loaded * 100) / progress.total);
-
-        // Send progress updates only if percentage changes
-        if (percentage > lastProgress) {
-          lastProgress = percentage;
+        // Send progress updates if client is still connected
+        if (!clientDisconnected && progress > lastProgress) {
+          lastProgress = progress;
           res.write(
             `data: ${JSON.stringify({
               file: file.originalname,
               fileIndex: index + 1,
               totalFiles,
-              progress: percentage,
+              progress,
             })}\n\n`
           );
         }
@@ -164,35 +182,199 @@ const uploadPhotos = asyncHandler(async (req, res) => {
         isSelected: false,
       });
 
-      // Send final progress as 100% for the completed file
-      res.write(
-        `data: ${JSON.stringify({
-          file: file.originalname,
-          fileIndex: index + 1,
-          totalFiles,
-          progress: 100,
-        })}\n\n`
-      );
+      // Final progress update
+      if (!clientDisconnected) {
+        res.write(
+          `data: ${JSON.stringify({
+            file: file.originalname,
+            fileIndex: index + 1,
+            totalFiles,
+            progress: 100,
+          })}\n\n`
+        );
+      }
     } catch (error) {
-      // Send error details through SSE
-      res.write(
-        `data: ${JSON.stringify({
-          error: true,
-          file: file.originalname,
-          message: error.message,
-        })}\n\n`
-      );
+      // Notify client about the failure
+      if (!clientDisconnected) {
+        res.write(
+          `data: ${JSON.stringify({
+            error: true,
+            file: file.originalname,
+            message: error.message,
+          })}\n\n`
+        );
+      }
+      console.error(`Error uploading ${file.originalname}:`, error.message);
     }
   }
 
-  // Update event photos in the database
-  event.photos.push({ eventName: event.name, photos: uploadedPhotos });
-  await event.save();
+  if (!clientDisconnected) {
+    // Update event photos in the database
+    event.photos.push({ eventName, photos: uploadedPhotos });
+    await event.save();
 
-  // Close the SSE connection
-  res.write(`data: ${JSON.stringify({ message: "Upload complete" })}\n\n`);
-  res.end();
+    // Notify client about completion
+    res.write(`data: ${JSON.stringify({ message: "Upload complete" })}\n\n`);
+    res.end();
+  }
 });
 
-export default uploadPhotos;
-export { createEvent, getEventById, getEventsPhotographer, getEventsUser, updateEvent, deleteEvent, uploadPhotos }
+/*-------------------------------------------Upload more Photos for existing event--------------------------------------*/
+const addMorePhotos = asyncHandler(async (req, res) => {
+  const { eventId } = req.params;
+  const { eventName } = req.body;
+
+  if (!eventName) {
+    throw new ApiError(400, "Event name is required");
+  }
+
+  if (!req.files || req.files.length === 0) {
+    throw new ApiError(400, "No files uploaded");
+  }
+
+  const event = await Event.findById(eventId);
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+  const eventPhotos = event.photos.find(photo => photo.eventName === eventName);
+  console.log(eventPhotos)
+  if (!eventPhotos) {
+    throw new ApiError(400, `Event with name '${eventName}' not found in photos`);
+  }
+  // Set up SSE headers
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+
+  const uploadedPhotos = [];
+  const totalFiles = req.files.length;
+
+  // Handle premature client disconnection
+  let clientDisconnected = false;
+  req.on("close", () => {
+    clientDisconnected = true;
+    console.log("Client disconnected");
+    res.end();
+  });
+
+  for (const [index, file] of req.files.entries()) {
+    if (clientDisconnected) break;
+
+    const s3Path = `${req.user.mobile}/${eventName}_${eventId}_${file.originalname}`;
+    let lastProgress = 0;
+
+    try {
+
+      const fileUrl = await s3Service.uploadFile(file, s3Path, (progress) => {
+        // Send progress updates if client is still connected
+        if (!clientDisconnected && progress > lastProgress) {
+          lastProgress = progress;
+          res.write(
+            `data: ${JSON.stringify({
+              file: file.originalname,
+              fileIndex: index + 1,
+              totalFiles,
+              progress,
+            })}\n\n`
+          );
+        }
+      });
+
+      uploadedPhotos.push({
+        s3Path: fileUrl.url,
+        size: `${(file.size / 1024).toFixed(2)} KB`,
+        isSelected: false,
+      });
+
+      // Final progress update
+      if (!clientDisconnected) {
+        res.write(
+          `data: ${JSON.stringify({
+            file: file.originalname,
+            fileIndex: index + 1,
+            totalFiles,
+            progress: 100,
+          })}\n\n`
+        );
+      }
+    } catch (error) {
+      // Notify client about the failure
+      if (!clientDisconnected) {
+        res.write(
+          `data: ${JSON.stringify({
+            error: true,
+            file: file.originalname,
+            message: error.message,
+          })}\n\n`
+        );
+      }
+      console.error(`Error uploading ${file.originalname}:`, error.message);
+    }
+  }
+
+  if (!clientDisconnected) {
+    // Update event photos in the database
+    eventPhotos.photos.push(...uploadedPhotos);
+    await event.save();
+
+    // Notify client about completion
+    res.write(`data: ${JSON.stringify({ message: "Upload complete" })}\n\n`);
+    res.end();
+  }
+});
+
+const deletePhotos = asyncHandler(async (req, res) => {
+  const { eventId } = req.params;
+  const { eventName, photoUrls } = req.body;
+
+  if (!eventName) {
+    throw new ApiError(400, "Event name is required");
+  }
+
+  if (!photoUrls || !Array.isArray(photoUrls) || photoUrls.length === 0) {
+    throw new ApiError(400, "Photo URLs are required and should be an array");
+  }
+
+  const event = await Event.findOne({
+    _id: eventId,
+    "photos.eventName": eventName,
+  });
+
+  if (!event) {
+    throw new ApiError(404, "Event not found or no photos exist for this event");
+  }
+
+  const eventPhotos = event.photos[0]?.photos || [];
+
+  const photosToDelete = eventPhotos.filter(photo =>
+    photoUrls.includes(photo.s3Path)
+  );
+
+  if (photosToDelete.length === 0) {
+    throw new ApiError(404, "No matching photos found to delete for this event");
+  }
+
+  console.log(photosToDelete)
+  try {
+    for (const photo of photosToDelete) {
+      await s3Service.deleteFile(photo.s3Path);
+    }
+
+    event.photos[0].photos = event.photos[0].photos.filter(photo =>
+      !photoUrls.includes(photo.s3Path)
+    );
+    await event.save();
+
+    res.status(200).json(ApiResponse(200,
+      photosToDelete
+      , "Photos deleted successfully"));
+  } catch (error) {
+    console.error("Error deleting photos:", error.message);
+    throw new ApiError(500, `Error deleting photos: ${error.message}`);
+  }
+});
+
+
+export { createEvent, getEventById, getEventsPhotographer, getEventsUser, updateEvent, deleteEvent, uploadPhotos, addMorePhotos, deletePhotos }
