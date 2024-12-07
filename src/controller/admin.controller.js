@@ -9,8 +9,6 @@ import { verifyOTP } from "../utils/otp.js";
 const userValidations = [
   check("name")
     .notEmpty().withMessage("Name is required!"),
-  check("password")
-    .notEmpty().withMessage("password is required!"),
   check("mobile")
     .notEmpty().withMessage("Mobile is required!")
     .isMobilePhone("any").withMessage("Mobile format is invalid."),
@@ -39,7 +37,7 @@ const registerUser = asyncHandler(async (req, res) => {
     role,
     isEmailVerified,
     isMobileVerified,
-    password
+    password : password || null,
   });
 
   const createdUser = await User.findById(user._id);
