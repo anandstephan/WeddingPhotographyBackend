@@ -5,11 +5,19 @@ import colors from "colors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { logger } from "./config/logger.js";
+import path from 'path'
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Use __dirname in your code
+app.use(express.static(path.join(__dirname)));
 // app.use((req, res, next) => {
 //   res.header("Access-Control-Allow-Origin", "http://localhost:6000"); // Replace with your frontend's origin
 //   res.header(
