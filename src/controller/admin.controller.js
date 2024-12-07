@@ -27,9 +27,8 @@ const registerUser = asyncHandler(async (req, res) => {
     $or: [{ mobile }, { email }],
   });
   if (existedUser) {
-    throw new ApiError(409, "User with Phone Number already exists");
+    return res.status(200).json(new ApiResponse(409, null, "User with Phone Number or email already exists"));
   }
-
   const user = await User.create({
     name,
     email,
@@ -37,12 +36,12 @@ const registerUser = asyncHandler(async (req, res) => {
     role,
     isEmailVerified,
     isMobileVerified,
-    password : password || null,
+    password: password || null,
   });
-
+  
   const createdUser = await User.findById(user._id);
   if (!createdUser) {
-    throw new ApiError(
+    throw new ApiResponse(
       500,
       "Something went wrong while registering the user"
     );
