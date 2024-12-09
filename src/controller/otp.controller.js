@@ -2,13 +2,22 @@ import { createAndStoreOtp, verifyOTP } from "../utils/otp.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
-
+import { User } from "../model/user.model.js";
 /*---------------------------------------mobileOtp------------------------------------------------*/
 const sendOtpMobile = asyncHandler(async (req, res) => {
-    const { mobile } = req.body;
+    const { mobile, flag } = req.body;
+    if (flag) {
+        if (flag === 'signup') {
+            const existedUser = await User.findOne({ mobile });
+            if (existedUser) {
+                return res.status(200).json(new ApiResponse(200, null, "User already exists!"));
+            }
+        }
+    }
     if (!mobile) {
         return res.status(400).json(new ApiError(400, null, "Please provide a mobile number"));
     }
+
     const otp = await createAndStoreOtp(mobile, "mobile");
     console.log("Otp", otp)
     return res.status(200).json(new ApiResponse(200, null, "OTP sent successfully"));
@@ -23,8 +32,9 @@ const verifyMobileOtp = asyncHandler(async (req, res) => {
     if (!isVerified) {
         throw new ApiError(400, "Invalid OTP")
     }
-    return res.status(200).json(new ApiResponse(200, { isMobileVerified }, "OTP verified successfully"));
+    return res.status(200).json(new ApiResponse(200, { isVerified }, "OTP verified successfully"));
 })
+
 const sendOtpEmail = asyncHandler(async (req, res) => {
     const { email } = req.body;
     if (!email) {
