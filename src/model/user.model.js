@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    trim: true,
     match: /^\d{10}$/,
   },
   isMobileVerified: {
@@ -21,6 +22,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     unique: true,
     sparse: true,
+    trim: true,
     match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   },
   isEmailVerified: {

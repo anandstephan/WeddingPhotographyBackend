@@ -4,11 +4,16 @@ import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { User } from "../model/user.model.js";
 /*---------------------------------------mobileOtp------------------------------------------------*/
+
 const sendOtpMobile = asyncHandler(async (req, res) => {
     const { mobile, flag } = req.body;
+    console.log(mobile, flag)
     if (flag) {
+        console.log("check")
         if (flag === 'signup') {
-            const existedUser = await User.findOne({ mobile });
+
+            const existedUser = await User.findOne({ mobile: mobile.trim() });
+            console.log(existedUser)
             if (existedUser) {
                 return res.status(200).json(new ApiResponse(200, null, "User already exists!"));
             }
