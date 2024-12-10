@@ -143,4 +143,23 @@ const deleteEventCategory = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, null, "Event category deleted successfully"));
 });
 
-export { createEventCategory, getAllEventCategories, getEventCategoryById, editEventCategory, deleteEventCategory };
+const getCategoriesGroupedByType = asyncHandler(async (req, res) => {
+    const categories = await EventCategory.aggregate([
+        {
+            $group: {
+                _id: "$type",
+                categories: { $push: { _id: "$_id", type: "$type", name: "$name", imageUrl: "$imageUrl", isActive: "$isActive" } }
+            }
+        },
+        {
+            $sort: { _id: 1 }
+        }
+    ]);
+
+    if (!categories || categories.length === 0) {
+        throw new ApiError(404, "No event categories found");
+    }
+
+    res.status(200).json(new ApiResponse(200, categories, "Event categories grouped by type fetched successfully"));
+});
+export { createEventCategory, getAllEventCategories, getEventCategoryById, editEventCategory, deleteEventCategory, getCategoriesGroupedByType };
