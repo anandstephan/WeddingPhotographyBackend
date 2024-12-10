@@ -8,7 +8,7 @@ const s3Service = new s3ServiceWithProgress();
 
 /*------------------------------------------------Create a Review---------------------------------------------*/
 
-export const createReview = asyncHandler(async (req, res) => {
+const createReview = asyncHandler(async (req, res) => {
     const { userId, photographerId, stars, comment } = req.body;
     let imageUrl;
 
@@ -102,3 +102,4 @@ const deleteReview = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, null, "Review deleted successfully"));
 });
 
+export { createReview, getReviewsByPhotographer, editReview, deleteReview }
