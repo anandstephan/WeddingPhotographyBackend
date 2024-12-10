@@ -20,18 +20,26 @@ const userValidations = [
     .isBoolean().withMessage("isMobileVerified should be a boolean value (true or false)."),
 ];
 const registerUser = asyncHandler(async (req, res) => {
-  let errors = validationResult(req);
+  const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json(new ApiError(400, "Validation Error", errors));
   }
+
   const { name, email, mobile, role, isEmailVerified, isMobileVerified, password } = req.body;
 
-  const existedUser = await User.findOne({
-    $or: [{ mobile }, { email }],
-  });
+  const query = {
+    $or: [{ mobile }],
+  };
+  if (email) {
+    query.$or.push({ email });
+  }
+
+  const existedUser = await User.findOne(query);
   if (existedUser) {
     return res.status(200).json(new ApiResponse(200, null, "User already exists!"));
   }
+
+  // Create the new user
   const user = await User.create({
     name,
     email,
@@ -44,16 +52,14 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const createdUser = await User.findById(user._id);
   if (!createdUser) {
-    throw new ApiResponse(
-      500,
-      "Something went wrong while registering the user"
-    );
+    throw new ApiError(500, "Something went wrong while registering the user");
   }
 
   return res
     .status(201)
-    .json(new ApiResponse(200, createdUser, "User registered Successfully"));
+    .json(new ApiResponse(201, createdUser, "User registered successfully"));
 });
+
 
 const loginUser = asyncHandler(async (req, res) => {
   const { identifier, password } = req.body;
