@@ -30,4 +30,8 @@ integratedRoutes.use("/photoPackage", verifyJwtToken, photoPackageRoutes);
 import eventCategoryRoutes from "./eventCategory.routes.js";
 integratedRoutes.use("/eventCategory", verifyJwtToken, eventCategoryRoutes)
 
+/*-----------------------------------------event Category------------------------------------*/
+import reviewRouter from "./review.router.js";
+integratedRoutes.use("/reviews", verifyJwtToken, reviewRouter)
+
 export default integratedRoutes;

@@ -4,7 +4,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { isValidObjectId } from "../utils/helper.js";
-
+import mongoose from "mongoose";
 /*---------------------------------------------create profile----------------------------------------*/
 const createProfile = asyncHandler(async (req, res) => {
     const { bio, specializations } = req.body;
@@ -95,5 +95,108 @@ const deleteProfile = asyncHandler(async (req, res) => {
     }
 });
 
-export { createProfile, updateProfile, getProfilebyId, deleteProfile };
+const getPhotographerProfile = asyncHandler(async (req, res) => {
+    const { photographerId } = req.params;
+
+    // Validate photographerId
+    if (!photographerId || !isValidObjectId(photographerId)) {
+        throw new ApiError(400, "Invalid photographer ID");
+    }
+
+    // Get photographer's user details and profile
+    const photographerData = await User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(photographerId),
+                role: "photographer"
+            }
+        },
+        {
+            $lookup: {
+                from: "photographerprofiles",
+                localField: "_id",
+                foreignField: "userId",
+                as: "profile"
+            }
+        },
+        {
+            $unwind: "$profile"
+        },
+        // Get reviews stats
+        {
+            $lookup: {
+                from: "reviews",
+                let: { photographer_id: "$_id" },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $eq: ["$photographerId", "$$photographer_id"]
+                            }
+                        }
+                    },
+                    {
+                        $sort: { createdAt: -1 }
+                    },
+                    {
+                        $limit: 10
+                    },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "userId",
+                            foreignField: "_id",
+                            as: "reviewer"
+                        }
+                    },
+                    {
+                        $unwind: "$reviewer"
+                    },
+                    {
+                        $project: {
+                            stars: 1,
+                            comment: 1,
+                            imageUrl: 1,
+                            createdAt: 1,
+                            "reviewer.name": 1,
+                            "reviewer.avatarUrl": 1
+                        }
+                    }
+                ],
+                as: "recentReviews"
+            }
+        },
+        {
+            $project: {
+                name: 1,
+                profileImage: "$avatarUrl",
+                about: "$profile.bio",
+                specializations: "$profile.specializations",
+                portfolio: {
+                    $map: {
+                        input: "$profile.portfolio",
+                        as: "folder",
+                        in: {
+                            folderName: "$$folder.folderName",
+                            photos: "$$folder.photos"
+                        }
+                    }
+                },
+                rating: "$profile.rating",
+                reviewCount: "$profile.reviewCount",
+                recentReviews: 1
+            }
+        }
+    ]);
+
+    if (!photographerData || photographerData.length === 0) {
+        throw new ApiError(404, "Photographer not found");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, photographerData[0], "Photographer profile fetched successfully")
+    );
+});
+
+export { createProfile, updateProfile, getProfilebyId, deleteProfile, getPhotographerProfile };
 
