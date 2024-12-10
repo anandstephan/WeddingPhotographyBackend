@@ -5,6 +5,9 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { createAccessOrRefreshToken } from "../utils/helper.js";
 import { check, validationResult } from "express-validator"
 import { verifyOTP } from "../utils/otp.js";
+import s3ServiceWithProgress from "../config/awsS3.config.js";
+
+const s3Service = new s3ServiceWithProgress();
 
 const userValidations = [
   check("name")
@@ -322,6 +325,33 @@ const loginWithMobile = asyncHandler(async (req, res) => {
       )
     );
 });
+
+const changeAvatarImage = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  if (!req.file) {
+      throw new ApiError(400, 'Avatar image is required');
+  }
+
+  let avatarUrl;
+  const s3Path = `avatars/${Date.now()}_${req.file.originalname}`;
+  const fileUrl = await s3Service.uploadFile(req.file, s3Path);
+  avatarUrl = fileUrl.url;
+
+  // Delete the previous avatar if it exists
+  if (user.avatarUrl) {
+      try {
+          await s3Service.deleteFile(user.avatarUrl);
+      } catch (err) {
+          console.error('Error deleting old avatar:', err.message);
+          throw new ApiError(500, 'Error deleting old avatar image');
+      }
+  }
+  user.avatarUrl = avatarUrl;
+  await user.save();
+
+  res.status(200).json(new ApiResponse(200, user, 'Avatar image updated successfully'));
+});
 const createClient = asyncHandler(async (req, res) => {
   try {
     const [number] = req.body;
@@ -347,4 +377,4 @@ const createClient = asyncHandler(async (req, res) => {
       .json(new ApiResponse(500, null, "Internal server error"));
   }
 });
-export { registerUser, loginUser, getCurrentUser, loginWithMobile, logoutUser, refreshAccessToken, changeCurrentPassword, createClient, fetchUser, userValidations, updateAccountDetails, loginAdmin };
+export { registerUser, loginUser, getCurrentUser, loginWithMobile, logoutUser, refreshAccessToken, changeCurrentPassword, createClient, fetchUser, userValidations, updateAccountDetails, loginAdmin,changeAvatarImage };

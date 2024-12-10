@@ -7,7 +7,7 @@ import verifyJwtToken from "../middlewere/auth.middleware.js";
 const integratedRoutes = express.Router();
 integratedRoutes.use("/users", verifyJwtToken, userRoutes)
 integratedRoutes.use("/public", publicRoutes)
-integratedRoutes.use("/admin", verifyJwtToken, adminRoutes)
+integratedRoutes.use("/public/admin", adminRoutes)
 
 /*--------------------------------------------------photographer Profile Routes ---------------------------*/
 import photographerProfilerouter from "./photographerProfile.route.js";
@@ -24,6 +24,10 @@ integratedRoutes.use("/events", verifyJwtToken, eventRouter)
 /*-----------------------------------------photo packages ------------------------------------*/
 
 import photoPackageRoutes from "./photoPackage.routes.js";
-integratedRoutes.use("/photoPackage", verifyJwtToken, photoPackageRoutes)
+integratedRoutes.use("/photoPackage", verifyJwtToken, photoPackageRoutes);
+
+/*-----------------------------------------event Category------------------------------------*/
+import eventCategoryRoutes from "./eventCategory.routes.js";
+integratedRoutes.use("/eventCategory", verifyJwtToken, eventCategoryRoutes)
 
 export default integratedRoutes;
