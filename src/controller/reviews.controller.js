@@ -52,3 +52,53 @@ const getReviewsByPhotographer = asyncHandler(async (req, res) => {
 
     res.status(200).json(new ApiResponse(200, reviews, "Reviews fetched successfully"));
 });
+
+const editReview = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { stars, comment } = req.body;
+    let imageUrl;
+
+    const review = await Review.findById(id);
+    if (!review) {
+        throw new ApiError(404, "Review not found");
+    }
+
+    if (stars) review.stars = stars;
+    if (comment) review.comment = comment;
+
+    if (req.file) {
+        const s3Path = `review_image_${Date.now()}_${req.file.originalname}`;
+        const fileUrl = await s3Service.uploadFile(req.file, s3Path);
+        imageUrl = fileUrl.url;
+
+        if (review.imageUrl) {
+            await s3Service.deleteFile(review.imageUrl);
+        }
+
+        review.imageUrl = imageUrl;
+    }
+
+    const updatedReview = await review.save();
+    res.status(200).json(new ApiResponse(200, updatedReview, "Review updated successfully"));
+});
+
+const deleteReview = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const review = await Review.findById(id);
+    if (!review) {
+        throw new ApiError(404, "Review not found");
+    }
+
+    if (review.imageUrl) {
+        try {
+            await s3Service.deleteFile(review.imageUrl);
+        } catch (err) {
+            throw new ApiError(500, "Error deleting associated image from S3");
+        }
+    }
+
+    await Review.findByIdAndDelete(id);
+    res.status(200).json(new ApiResponse(200, null, "Review deleted successfully"));
+});
+

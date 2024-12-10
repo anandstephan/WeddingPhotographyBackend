@@ -12,7 +12,7 @@ const eventCategorySchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['wedding', 'engagement', 'anniversary', 'events', 'birthday', 'other'],
+        enum: ['wedding', 'events', 'other'],
         required: true
     },
     isActive: {
