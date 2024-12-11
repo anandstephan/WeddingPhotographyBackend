@@ -1,19 +1,16 @@
 import express from 'express';
 import { multerUpload } from '../middlewere/multer.middlewere.js';
-import { createReview,editReview,getReviewsByPhotographer,deleteReview } from '../controller/reviews.controller.js';
+import { createReview, editReview, getReviewsByPhotographer, deleteReview, getReviewById } from '../controller/reviews.controller.js';
 
-const router = express.Router();
+const reviewRouter = express.Router();
 
-// Create a review
-router.post('/', multerUpload.single('image'), createReview);
+reviewRouter.post('/create', multerUpload.single('image'), createReview);
 
-// Get reviews for a photographer
-router.get('/:photographerId', getReviewsByPhotographer);
+reviewRouter.get('/get/:photographerId', getReviewsByPhotographer);
+reviewRouter.get('/get-by-id/:reviewId', getReviewById);
 
-// Edit a review
-router.put('/:id', multerUpload.single('image'), editReview);
+reviewRouter.put('/edit/:id', multerUpload.single('image'), editReview);
 
-// Delete a review
-router.delete('/:id', deleteReview);
+reviewRouter.delete('/delete/:id', deleteReview);
 
-export default router;
+export default reviewRouter;

@@ -1,13 +1,46 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+
+const addressSchema = new mongoose.Schema({
+  street: {
+    type: String,
+    trim: true
+  },
+  city: {
+    type: String,
+    trim: true,
+    required: true
+  },
+  state: {
+    type: String,
+    trim: true,
+    required: true
+  },
+  country: {
+    type: String,
+    trim: true,
+    required: true,
+    default: "India"
+  },
+  pincode: {
+    type: String,
+    trim: true,
+    required: true,
+    match: [/^\d{6}$/, "Please enter a valid 6-digit pincode"]
+  },
+  landmark: {
+    type: String,
+    trim: true
+  }
+}, { _id: false });
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
     trim: true,
   },
-  avatarUrl:{
+  avatarUrl: {
     type: String,
     trim: true,
   },
@@ -39,6 +72,7 @@ const userSchema = new mongoose.Schema({
     enum: ["admin", "photographer", "user"],
     required: true,
   },
+  address: addressSchema,
   password: {
     type: String,
     minlength: 8,

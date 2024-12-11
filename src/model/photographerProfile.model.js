@@ -14,8 +14,8 @@ const portfolioItemSchema = new mongoose.Schema({
     storageUsed: { type: Number, default: 0 }, // in GB
     packageStartDate: Date,
     packageEndDate: Date,
-    rating: { type: Number, default: 0 },
-    reviewCount: { type: Number, default: 0 },
+    // rating: { type: Number, default: 0 },
+    // reviewCount: { type: Number, default: 0 },
   }, { timestamps: true });
   
   export const PhotographerProfile = mongoose.model('PhotographerProfile', photographerProfileSchema);
