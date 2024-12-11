@@ -33,7 +33,10 @@ const registerUser = asyncHandler(async (req, res) => {
   if (email) {
     query.$or.push({ email });
   }
-
+  let isActive = true;
+  if (role === "photographer") {
+    isActive = false;
+  }
   const existedUser = await User.findOne(query);
   if (existedUser) {
     return res.status(200).json(new ApiResponse(200, null, "User already exists!"));
@@ -47,6 +50,7 @@ const registerUser = asyncHandler(async (req, res) => {
     role,
     isEmailVerified,
     isMobileVerified,
+    isActive,
     password: password || null,
   });
 
@@ -144,15 +148,39 @@ const loginAdmin = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { name, email, isEmailVerified } = req.body;
+  const { name, email, isEmailVerified, address,isActive } = req.body;
 
+  // Email verification requirement check
   if (email && !isEmailVerified) {
     throw new ApiError(400, "Email verification is required to update email address");
   }
+
+  // Prepare update fields
   const updateFields = {};
   if (name) updateFields.name = name;
   if (email) updateFields.email = email;
+  if (isActive) updateFields.isActive = isActive;
+  
   if (isEmailVerified !== undefined) updateFields.isEmailVerified = isEmailVerified;
+
+  // Address handling
+  if (address) {
+    // Destructure provided address fields
+    const { street, city, state, country, pincode, landmark } = address;
+
+    // Check if address exists, update it; otherwise, set new address
+    updateFields.address = {
+      ...(req.user.address || {}),
+      ...(street && { street }),
+      ...(city && { city }),
+      ...(state && { state }),
+      ...(country && { country }),
+      ...(pincode && { pincode }),
+      ...(landmark && { landmark }),
+    };
+  }
+
+  // Update the user document
   const updatedUser = await User.findByIdAndUpdate(
     req.user._id,
     { $set: updateFields },
@@ -167,6 +195,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, updatedUser, "User updated successfully"));
 });
+
 
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
@@ -336,7 +365,7 @@ const changeAvatarImage = asyncHandler(async (req, res) => {
   const user = req.user;
 
   if (!req.file) {
-      throw new ApiError(400, 'Avatar image is required');
+    throw new ApiError(400, 'Avatar image is required');
   }
 
   let avatarUrl;
@@ -346,18 +375,20 @@ const changeAvatarImage = asyncHandler(async (req, res) => {
 
   // Delete the previous avatar if it exists
   if (user.avatarUrl) {
-      try {
-          await s3Service.deleteFile(user.avatarUrl);
-      } catch (err) {
-          console.error('Error deleting old avatar:', err.message);
-          throw new ApiError(500, 'Error deleting old avatar image');
-      }
+    try {
+      await s3Service.deleteFile(user.avatarUrl);
+    } catch (err) {
+      console.error('Error deleting old avatar:', err.message);
+      throw new ApiError(500, 'Error deleting old avatar image');
+    }
   }
   user.avatarUrl = avatarUrl;
   await user.save();
 
   res.status(200).json(new ApiResponse(200, user, 'Avatar image updated successfully'));
 });
+
+
 const createClient = asyncHandler(async (req, res) => {
   try {
     const [number] = req.body;
@@ -383,4 +414,4 @@ const createClient = asyncHandler(async (req, res) => {
       .json(new ApiResponse(500, null, "Internal server error"));
   }
 });
-export { registerUser, loginUser, getCurrentUser, loginWithMobile, logoutUser, refreshAccessToken, changeCurrentPassword, createClient, fetchUser, userValidations, updateAccountDetails, loginAdmin,changeAvatarImage };
+export { registerUser, loginUser, getCurrentUser, loginWithMobile, logoutUser, refreshAccessToken, changeCurrentPassword, createClient, fetchUser, userValidations, updateAccountDetails, loginAdmin, changeAvatarImage };
