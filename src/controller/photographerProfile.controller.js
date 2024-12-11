@@ -97,13 +97,10 @@ const deleteProfile = asyncHandler(async (req, res) => {
 
 const getPhotographerProfile = asyncHandler(async (req, res) => {
     const { photographerId } = req.params;
-
-    // Validate photographerId
     if (!photographerId || !isValidObjectId(photographerId)) {
         throw new ApiError(400, "Invalid photographer ID");
     }
 
-    // Get photographer's user details and profile
     const photographerData = await User.aggregate([
         {
             $match: {
@@ -122,8 +119,32 @@ const getPhotographerProfile = asyncHandler(async (req, res) => {
         {
             $unwind: "$profile"
         },
-        // Get reviews stats
         {
+            // First lookup to get rating statistics
+            $lookup: {
+                from: "reviews",
+                let: { photographer_id: "$_id" },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $eq: ["$photographerId", "$$photographer_id"]
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            averageRating: { $avg: "$stars" },
+                            totalReviews: { $sum: 1 }
+                        }
+                    }
+                ],
+                as: "ratingStats"
+            }
+        },
+        {
+            // Second lookup to get recent reviews
             $lookup: {
                 from: "reviews",
                 let: { photographer_id: "$_id" },
@@ -182,8 +203,23 @@ const getPhotographerProfile = asyncHandler(async (req, res) => {
                         }
                     }
                 },
-                rating: "$profile.rating",
-                reviewCount: "$profile.reviewCount",
+                rating: {
+                    $round: [
+                        {
+                            $ifNull: [
+                                { $arrayElemAt: ["$ratingStats.averageRating", 0] },
+                                0
+                            ]
+                        },
+                        1
+                    ]
+                },
+                reviewCount: {
+                    $ifNull: [
+                        { $arrayElemAt: ["$ratingStats.totalReviews", 0] },
+                        0
+                    ]
+                },
                 recentReviews: 1
             }
         }
@@ -197,6 +233,8 @@ const getPhotographerProfile = asyncHandler(async (req, res) => {
         new ApiResponse(200, photographerData[0], "Photographer profile fetched successfully")
     );
 });
+
+
 
 export { createProfile, updateProfile, getProfilebyId, deleteProfile, getPhotographerProfile };
 
