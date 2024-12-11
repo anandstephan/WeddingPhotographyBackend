@@ -194,7 +194,8 @@ const getPhotographerProfile = asyncHandler(async (req, res) => {
             $project: {
                 name: 1,
                 profileImage: "$avatarUrl",
-                avatarUrl:1,
+                avatarUrl: 1,
+                city: { $ifNull: ["$address.city", ""] },
                 about: "$profile.bio",
                 specializations: "$profile.specializations",
                 portfolio: {
@@ -406,11 +407,12 @@ const addPhotosToFolder = asyncHandler(async (req, res) => {
 
 
 const getPhotographersList = asyncHandler(async (req, res) => {
-    const { events, page = 1, limit = 10, city } = req.query;
+    const { page = 1, limit = 10, city } = req.query;
+    const { events } = req.body;
     const pageNumber = parseInt(page);
     const limitNumber = parseInt(limit);
     const skip = (pageNumber - 1) * limitNumber;
-    const eventsList = events ? JSON.parse(events) : [];
+    const eventsList = events ? events : [];
     if (!Array.isArray(eventsList)) {
         throw new ApiError(400, "Events must be an array");
     }
@@ -503,8 +505,8 @@ const getPhotographersList = asyncHandler(async (req, res) => {
             $project: {
                 _id: 1,
                 name: 1,
-                avatarUrl: 1, 
-                city: { $ifNull: ["$address.city", ""] }, 
+                avatarUrl: 1,
+                city: { $ifNull: ["$address.city", ""] },
                 specializations: { $ifNull: ["$profile.specializations", []] },
                 rating: {
                     $round: [
@@ -540,16 +542,13 @@ const getPhotographersList = asyncHandler(async (req, res) => {
     // Get total count before pagination
     const totalDocs = await User.aggregate([...pipeline, { $count: "total" }]);
     const total = totalDocs.length > 0 ? totalDocs[0].total : 0;
-
-    // Add pagination
     pipeline.push(
         { $skip: skip },
         { $limit: limitNumber }
     );
 
-    // Execute final query
     const photographers = await User.aggregate(pipeline);
-    
+
 
     // Remove matchingSpecializationsCount from final output
     const cleanedPhotographers = photographers.map(({ matchingSpecializationsCount, ...rest }) => rest);
