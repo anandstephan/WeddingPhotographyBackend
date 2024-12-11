@@ -76,7 +76,8 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     minlength: 8,
-  }
+  },
+  isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
 

@@ -415,10 +415,10 @@ const getPhotographersList = asyncHandler(async (req, res) => {
     }
 
     const matchQuery = {
-        role: "photographer"
+        role: "photographer",
+        isActive: true
     };
 
-    // Create regex conditions for specializations
     const specializationConditions = eventsList.length > 0 ? {
         $match: {
             $or: eventsList.map(event => ({
@@ -473,7 +473,7 @@ const getPhotographersList = asyncHandler(async (req, res) => {
         // Filter by city if provided
         ...(city ? [{
             $match: {
-                city: new RegExp(city, 'i')
+                "profile.address.city": new RegExp(city, 'i')  // Fixed: Changed to profile.address.city
             }
         }] : []),
         // Add a field to count matching specializations for better relevance sorting
@@ -502,15 +502,19 @@ const getPhotographersList = asyncHandler(async (req, res) => {
             $project: {
                 _id: 1,
                 name: 1,
-                city: 1,
-                specializations: "$profile.specializations",
+                avatarUrl: 1, 
+                city: { $ifNull: ["$address.city", ""] }, 
+                specializations: { $ifNull: ["$profile.specializations", []] },
                 rating: {
-                    $round: [{
-                        $ifNull: [
-                            { $arrayElemAt: ["$ratingStats.averageRating", 0] },
-                            0
-                        ]
-                    }, 1]
+                    $round: [
+                        {
+                            $ifNull: [
+                                { $arrayElemAt: ["$ratingStats.averageRating", 0] },
+                                0
+                            ]
+                        },
+                        1
+                    ]
                 },
                 reviewCount: {
                     $ifNull: [
@@ -518,7 +522,9 @@ const getPhotographersList = asyncHandler(async (req, res) => {
                         0
                     ]
                 },
-                matchingSpecializationsCount: 1
+                matchingSpecializationsCount: {
+                    $ifNull: ["$matchingSpecializationsCount", 0]
+                }
             }
         },
         {
@@ -542,6 +548,7 @@ const getPhotographersList = asyncHandler(async (req, res) => {
 
     // Execute final query
     const photographers = await User.aggregate(pipeline);
+    
 
     // Remove matchingSpecializationsCount from final output
     const cleanedPhotographers = photographers.map(({ matchingSpecializationsCount, ...rest }) => rest);
