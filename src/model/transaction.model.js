@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const transactionSchema = new mongoose.Schema({
+    type:{
+        type: String,
+        enum: ["user","photographer"],
+        required: true
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -8,7 +13,6 @@ const transactionSchema = new mongoose.Schema({
     },
     packageId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'StoragePackage',
         required: true
     },
     amount: {
