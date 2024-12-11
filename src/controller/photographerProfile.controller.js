@@ -194,6 +194,7 @@ const getPhotographerProfile = asyncHandler(async (req, res) => {
             $project: {
                 name: 1,
                 profileImage: "$avatarUrl",
+                avatarUrl:1,
                 about: "$profile.bio",
                 specializations: "$profile.specializations",
                 portfolio: {
