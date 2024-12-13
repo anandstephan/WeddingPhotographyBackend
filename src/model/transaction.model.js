@@ -33,6 +33,10 @@ const transactionSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true
+    },
+    paymentDetails:{
+        type: mongoose.Schema.Types.Mixed,
+        default: {}
     }
 }, { timestamps: true });
 

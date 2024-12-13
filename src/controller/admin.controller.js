@@ -7,6 +7,7 @@ import { check, validationResult } from "express-validator"
 import { verifyOTP } from "../utils/otp.js";
 import s3ServiceWithProgress from "../config/awsS3.config.js";
 
+
 const s3Service = new s3ServiceWithProgress();
 
 const userValidations = [
@@ -58,10 +59,20 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
-
+  const { accessToken, refreshToken } = await createAccessOrRefreshToken(createdUser._id);
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
   return res
     .status(201)
-    .json(new ApiResponse(201, createdUser, "User registered successfully"));
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(new ApiResponse(201, {
+      user: createdUser,
+      accessToken,
+      refreshToken,
+    }, "User registered successfully"));
 });
 
 
@@ -148,7 +159,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { name, email, isEmailVerified, address,isActive } = req.body;
+  const { name, email, isEmailVerified, address, isActive } = req.body;
 
   // Email verification requirement check
   if (email && !isEmailVerified) {
@@ -160,7 +171,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
   if (name) updateFields.name = name;
   if (email) updateFields.email = email;
   if (isActive) updateFields.isActive = isActive;
-  
+
   if (isEmailVerified !== undefined) updateFields.isEmailVerified = isEmailVerified;
 
   // Address handling

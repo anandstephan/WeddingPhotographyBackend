@@ -3,8 +3,8 @@ import { createPhotoPackage,getPhotoPackageById,getAllPhotoPackages,updatePhotoP
 const photoPackageRoutes = express.Router();
 photoPackageRoutes.post("/create", createPhotoPackage)
 photoPackageRoutes.get("/get-package/:id", getPhotoPackageById)
-photoPackageRoutes.post("/get-list/:photographerId", getAllPhotoPackages)
-photoPackageRoutes.post("/update/:id", updatePhotoPackage)
-photoPackageRoutes.post("/delete/:id", deletePhotoPackage)
+photoPackageRoutes.get("/get-list/:photographerId", getAllPhotoPackages)
+photoPackageRoutes.put("/update/:id", updatePhotoPackage)
+photoPackageRoutes.delete("/delete/:id", deletePhotoPackage)
 
 export default photoPackageRoutes;
