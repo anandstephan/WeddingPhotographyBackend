@@ -44,6 +44,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  faceIdImageUrl:{
+    type: String,
+    trim: true,
+  },
   mobile: {
     type: String,
     required: true,

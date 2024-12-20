@@ -3,22 +3,24 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { createAccessOrRefreshToken } from "../utils/helper.js";
-import { check, validationResult } from "express-validator"
+import { check, validationResult } from "express-validator";
 import { verifyOTP } from "../utils/otp.js";
 import s3ServiceWithProgress from "../config/awsS3.config.js";
-
 
 const s3Service = new s3ServiceWithProgress();
 
 const userValidations = [
-  check("name")
-    .notEmpty().withMessage("Name is required!"),
+  check("name").notEmpty().withMessage("Name is required!"),
   check("mobile")
-    .notEmpty().withMessage("Mobile is required!")
-    .isMobilePhone("any").withMessage("Mobile format is invalid."),
+    .notEmpty()
+    .withMessage("Mobile is required!")
+    .isMobilePhone("any")
+    .withMessage("Mobile format is invalid."),
   check("isMobileVerified")
-    .notEmpty().withMessage("isMobileVerified is required!")
-    .isBoolean().withMessage("isMobileVerified should be a boolean value (true or false)."),
+    .notEmpty()
+    .withMessage("isMobileVerified is required!")
+    .isBoolean()
+    .withMessage("isMobileVerified should be a boolean value (true or false)."),
 ];
 const registerUser = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
@@ -26,7 +28,15 @@ const registerUser = asyncHandler(async (req, res) => {
     return res.status(400).json(new ApiError(400, "Validation Error", errors));
   }
 
-  const { name, email, mobile, role, isEmailVerified, isMobileVerified, password } = req.body;
+  const {
+    name,
+    email,
+    mobile,
+    role,
+    isEmailVerified,
+    isMobileVerified,
+    password,
+  } = req.body;
 
   const query = {
     $or: [{ mobile }],
@@ -40,7 +50,9 @@ const registerUser = asyncHandler(async (req, res) => {
   }
   const existedUser = await User.findOne(query);
   if (existedUser) {
-    return res.status(200).json(new ApiResponse(200, null, "User already exists!"));
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "User already exists!"));
   }
 
   // Create the new user
@@ -59,7 +71,9 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!createdUser) {
     throw new ApiError(500, "Something went wrong while registering the user");
   }
-  const { accessToken, refreshToken } = await createAccessOrRefreshToken(createdUser._id);
+  const { accessToken, refreshToken } = await createAccessOrRefreshToken(
+    createdUser._id
+  );
   const options = {
     httpOnly: true,
     secure: true,
@@ -68,22 +82,30 @@ const registerUser = asyncHandler(async (req, res) => {
     .status(201)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json(new ApiResponse(201, {
-      user: createdUser,
-      accessToken,
-      refreshToken,
-    }, "User registered successfully"));
+    .json(
+      new ApiResponse(
+        201,
+        {
+          user: createdUser,
+          accessToken,
+          refreshToken,
+        },
+        "User registered successfully"
+      )
+    );
 });
-
 
 const loginUser = asyncHandler(async (req, res) => {
   const { identifier, password } = req.body;
   if (!identifier || !password) {
-    throw new ApiError(400, "Identifier (email or mobile) and password are required");
+    throw new ApiError(
+      400,
+      "Identifier (email or mobile) and password are required"
+    );
   }
 
   const user = await User.findOne({
-    $or: [{ email: identifier }, { mobile: identifier }]
+    $or: [{ email: identifier }, { mobile: identifier }],
   });
 
   if (!user) {
@@ -93,8 +115,12 @@ const loginUser = asyncHandler(async (req, res) => {
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials");
   }
-  const { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+  const { accessToken, refreshToken } = await createAccessOrRefreshToken(
+    user._id
+  );
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
   const options = {
     httpOnly: true,
     secure: true,
@@ -120,11 +146,14 @@ const loginUser = asyncHandler(async (req, res) => {
 const loginAdmin = asyncHandler(async (req, res) => {
   const { identifier, password } = req.body;
   if (!identifier || !password) {
-    throw new ApiError(400, "Identifier (email or mobile) and password are required");
+    throw new ApiError(
+      400,
+      "Identifier (email or mobile) and password are required"
+    );
   }
 
   const user = await User.findOne({
-    $or: [{ email: identifier }, { mobile: identifier }]
+    $or: [{ email: identifier }, { mobile: identifier }],
   });
 
   if (!user) {
@@ -134,8 +163,12 @@ const loginAdmin = asyncHandler(async (req, res) => {
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials");
   }
-  const { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
-  const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+  const { accessToken, refreshToken } = await createAccessOrRefreshToken(
+    user._id
+  );
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
   const options = {
     httpOnly: true,
     secure: true,
@@ -163,7 +196,10 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
   // Email verification requirement check
   if (email && !isEmailVerified) {
-    throw new ApiError(400, "Email verification is required to update email address");
+    throw new ApiError(
+      400,
+      "Email verification is required to update email address"
+    );
   }
 
   // Prepare update fields
@@ -172,7 +208,8 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
   if (email) updateFields.email = email;
   if (isActive) updateFields.isActive = isActive;
 
-  if (isEmailVerified !== undefined) updateFields.isEmailVerified = isEmailVerified;
+  if (isEmailVerified !== undefined)
+    updateFields.isEmailVerified = isEmailVerified;
 
   // Address handling
   if (address) {
@@ -207,59 +244,60 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updatedUser, "User updated successfully"));
 });
 
-
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
     {
       $unset: {
-        refreshToken: 1 // this removes the field from document
-      }
+        refreshToken: 1, // this removes the field from document
+      },
     },
     {
-      new: true
+      new: true,
     }
-  )
+  );
 
   const options = {
     httpOnly: true,
-    secure: true
-  }
+    secure: true,
+  };
 
   return res
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
-    .json(new ApiResponse(200, {}, "User logged Out"))
-})
+    .json(new ApiResponse(200, {}, "User logged Out"));
+});
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
 
   if (!incomingRefreshToken) {
-    throw new ApiError(401, "unauthorized request")
+    throw new ApiError(401, "unauthorized request");
   }
 
   try {
     const decodedToken = jwt.verify(
       incomingRefreshToken,
       process.env.REFRESH_TOKEN_KEY
-    )
+    );
 
-    const user = await User.findById(decodedToken?._id)
+    const user = await User.findById(decodedToken?._id);
     if (!user) {
-      throw new ApiError(401, "Invalid refresh token")
+      throw new ApiError(401, "Invalid refresh token");
     }
     if (incomingRefreshToken !== user?.refreshToken) {
-      throw new ApiError(401, "Refresh token is expired or used")
-
+      throw new ApiError(401, "Refresh token is expired or used");
     }
     const options = {
       httpOnly: true,
-      secure: true
-    }
+      secure: true,
+    };
 
-    const { accessToken, newRefreshToken } = await createAccessOrRefreshToken(user._id)
+    const { accessToken, newRefreshToken } = await createAccessOrRefreshToken(
+      user._id
+    );
 
     return res
       .status(200)
@@ -271,40 +309,36 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
           { accessToken, refreshToken: newRefreshToken },
           "Access token refreshed"
         )
-      )
+      );
   } catch (error) {
-    throw new ApiError(401, error?.message || "Invalid refresh token")
+    throw new ApiError(401, error?.message || "Invalid refresh token");
   }
-})
+});
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
-  const { oldPassword, newPassword } = req.body
+  const { oldPassword, newPassword } = req.body;
   if (!oldPassword || !newPassword) {
     throw new ApiError(400, "Old and new password are required");
   }
-  const user = await User.findById(req.user?._id)
-  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+  const user = await User.findById(req.user?._id);
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
   if (!isPasswordCorrect) {
-    throw new ApiError(400, "Invalid old password")
+    throw new ApiError(400, "Invalid old password");
   }
 
-  user.password = newPassword
-  await user.save({ validateBeforeSave: false })
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, "Password changed successfully"))
-})
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
 const getCurrentUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(new ApiResponse(
-      200,
-      req.user,
-      "User fetched successfully"
-    ))
-})
+    .json(new ApiResponse(200, req.user, "User fetched successfully"));
+});
 
 const fetchUser = asyncHandler(async (req, res) => {
   try {
@@ -340,15 +374,19 @@ const loginWithMobile = asyncHandler(async (req, res) => {
   const { mobile, otp } = req.body;
 
   if (!mobile) {
-    throw new ApiError(400, "Mobile number is required")
+    throw new ApiError(400, "Mobile number is required");
   }
   let existingUser = await User.findOne({ mobile });
   const isVerified = await verifyOTP(mobile, otp);
   if (!isVerified) {
-    throw new ApiError(400, "Invalid OTP")
+    throw new ApiError(400, "Invalid OTP");
   }
-  const { accessToken, refreshToken } = await createAccessOrRefreshToken(existingUser._id);
-  const loggedInUser = await User.findById(existingUser._id).select("-password -refreshToken");
+  const { accessToken, refreshToken } = await createAccessOrRefreshToken(
+    existingUser._id
+  );
+  const loggedInUser = await User.findById(existingUser._id).select(
+    "-password -refreshToken"
+  );
 
   const options = {
     httpOnly: true,
@@ -376,7 +414,7 @@ const changeAvatarImage = asyncHandler(async (req, res) => {
   const user = req.user;
 
   if (!req.file) {
-    throw new ApiError(400, 'Avatar image is required');
+    throw new ApiError(400, "Avatar image is required");
   }
 
   let avatarUrl;
@@ -389,16 +427,17 @@ const changeAvatarImage = asyncHandler(async (req, res) => {
     try {
       await s3Service.deleteFile(user.avatarUrl);
     } catch (err) {
-      console.error('Error deleting old avatar:', err.message);
-      throw new ApiError(500, 'Error deleting old avatar image');
+      console.error("Error deleting old avatar:", err.message);
+      throw new ApiError(500, "Error deleting old avatar image");
     }
   }
   user.avatarUrl = avatarUrl;
   await user.save();
 
-  res.status(200).json(new ApiResponse(200, user, 'Avatar image updated successfully'));
+  res
+    .status(200)
+    .json(new ApiResponse(200, user, "Avatar image updated successfully"));
 });
-
 
 const createClient = asyncHandler(async (req, res) => {
   try {
@@ -425,4 +464,47 @@ const createClient = asyncHandler(async (req, res) => {
       .json(new ApiResponse(500, null, "Internal server error"));
   }
 });
-export { registerUser, loginUser, getCurrentUser, loginWithMobile, logoutUser, refreshAccessToken, changeCurrentPassword, createClient, fetchUser, userValidations, updateAccountDetails, loginAdmin, changeAvatarImage };
+
+const faceIdImageUpload = asyncHandler(async (req, res) => {
+  const user = req.user;
+  if (!req.file) {
+    throw new ApiError(400, "image is required");
+  }
+
+  let faceIdImageUrl;
+  const s3Path = `faceId/${Date.now()}_${req.file.originalname}`;
+  const fileUrl = await s3Service.uploadFile(req.file, s3Path);
+  faceIdImageUrl = fileUrl.url;
+
+  // Delete the previous avatar if it exists
+  if (user.faceIdImageUrl) {
+    try {
+      await s3Service.deleteFile(user.faceIdImageUrl);
+    } catch (err) {
+      console.error("Error deleting old avatar:", err.message);
+      throw new ApiError(500, "Error deleting old avatar image");
+    }
+  }
+  user.faceIdImageUrl = faceIdImageUrl;
+  await user.save();
+  res
+    .status(200)
+    .json(new ApiResponse(200, user, "Avatar image updated successfully"));
+});
+
+export {
+  registerUser,
+  loginUser,
+  getCurrentUser,
+  loginWithMobile,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  createClient,
+  fetchUser,
+  userValidations,
+  updateAccountDetails,
+  loginAdmin,
+  changeAvatarImage,
+  faceIdImageUpload,
+};

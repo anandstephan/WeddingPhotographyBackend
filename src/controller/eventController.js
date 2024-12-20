@@ -1,37 +1,33 @@
-import ApiError from '../utils/ApiError.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import ApiResponse from '../utils/ApiResponse.js';
-import { Event } from '../model/events.model.js';
-import { User } from '../model/user.model.js';
-import s3ServiceWithProgress from '../config/awsS3.config.js';
+import ApiError from "../utils/ApiError.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import { Event } from "../model/events.model.js";
+import { User } from "../model/user.model.js";
+import s3ServiceWithProgress from "../config/awsS3.config.js";
+import slugify from "slugify";
 
 const s3Service = new s3ServiceWithProgress();
 /*-------------------------------------------Create Event---------------------------------------*/
 const createEvent = asyncHandler(async (req, res) => {
   const eventData = req.body;
 
-  // // Validate and ensure photos are in the correct format
-  // if (eventData.photos && eventData.photos.length) {
-  //   eventData.photos = eventData.photos.map(photoDetail => ({
-  //     eventName: photoDetail.eventName,
-  //     photos: photoDetail.photos.map(photo => ({
-  //       s3Path: photo.s3Path,
-  //       size: photo.size,
-  //       isSelected: photo.isSelected || false,
-  //     })),
-  //   }));
-  // }
-
+  const slug = slugify(eventData.name, { lower: true, strict: true });
+  eventData.name = slug;
   const newEvent = new Event(eventData);
   await newEvent.save();
 
-  res.status(201).json(new ApiResponse(201, newEvent, "Event created successfully"));
+  res
+    .status(201)
+    .json(new ApiResponse(201, newEvent, "Event created successfully"));
 });
 
 /*-------------------------------------------Get Event by ID---------------------------------------*/
 const getEventById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const event = await Event.findById(id).populate('packageId', 'name photoCount price').populate('userId', 'name mobile email').populate('photographerId', 'name mobile email');
+  const event = await Event.findById(id)
+    .populate("packageId", "name photoCount price")
+    .populate("userId", "name mobile email")
+    .populate("photographerId", "name mobile email");
 
   if (!event) {
     throw new ApiError(404, "Couldn't find event!");
@@ -44,36 +40,52 @@ const getEventById = asyncHandler(async (req, res) => {
 const getEventsPhotographer = asyncHandler(async (req, res) => {
   let user = req.user;
   if (req.params.photographerId) {
-    const photographer = await User.findOne({ _id: req.params.photographerId, role: "photographer" });
+    const photographer = await User.findOne({
+      _id: req.params.photographerId,
+      role: "photographer",
+    });
     if (!photographer) {
       throw new ApiError(404, "Photographer not found!");
     }
     user = photographer;
   }
-  const events = await Event.find({ photographerId: user._id }).populate('packageId', 'name photoCount price').populate('userId', 'name mobile email').populate('photographerId', 'name mobile email');;
+  const events = await Event.find({ photographerId: user._id })
+    .populate("packageId", "name photoCount price")
+    .populate("userId", "name mobile email")
+    .populate("photographerId", "name mobile email");
   if (!events || !events.length) {
     throw new ApiError(404, "No events found.");
   }
 
-  res.status(200).json(new ApiResponse(200, events, "Events fetched successfully"));
+  res
+    .status(200)
+    .json(new ApiResponse(200, events, "Events fetched successfully"));
 });
 /*------------------------------------Get All Events user---------------------------------------*/
 
 const getEventsUser = asyncHandler(async (req, res) => {
   let user = req.user;
   if (req.params.userId) {
-    const existingUser = await User.findOne({ _id: req.params.userId, role: "user" });
+    const existingUser = await User.findOne({
+      _id: req.params.userId,
+      role: "user",
+    });
     if (!existingUser) {
       throw new ApiError(404, "user not found!");
     }
     user = existingUser;
   }
-  const events = await Event.find({ userId: user._id }).populate('packageId', 'name photoCount price').populate('userId', 'name mobile email').populate('photographerId', 'name mobile email');;
+  const events = await Event.find({ userId: user._id })
+    .populate("packageId", "name photoCount price")
+    .populate("userId", "name mobile email")
+    .populate("photographerId", "name mobile email");
   if (!events || !events.length) {
     throw new ApiError(404, "No events found.");
   }
 
-  res.status(200).json(new ApiResponse(200, events, "Events fetched successfully"));
+  res
+    .status(200)
+    .json(new ApiResponse(200, events, "Events fetched successfully"));
 });
 /*-------------------------------------------Update Event---------------------------------------*/
 const updateEvent = asyncHandler(async (req, res) => {
@@ -81,9 +93,9 @@ const updateEvent = asyncHandler(async (req, res) => {
 
   // Ensure photos are updated in the correct format
   if (req.body.photos && req.body.photos.length) {
-    req.body.photos = req.body.photos.map(photoDetail => ({
+    req.body.photos = req.body.photos.map((photoDetail) => ({
       eventName: photoDetail.eventName,
-      photos: photoDetail.photos.map(photo => ({
+      photos: photoDetail.photos.map((photo) => ({
         s3Path: photo.s3Path,
         size: photo.size,
         isSelected: photo.isSelected || false,
@@ -91,12 +103,16 @@ const updateEvent = asyncHandler(async (req, res) => {
     }));
   }
 
-  const updatedEvent = await Event.findByIdAndUpdate(id, req.body, { new: true });
+  const updatedEvent = await Event.findByIdAndUpdate(id, req.body, {
+    new: true,
+  });
   if (!updatedEvent) {
     throw new ApiError(404, "Couldn't find event!");
   }
 
-  res.status(200).json(new ApiResponse(200, updatedEvent, "Event updated successfully."));
+  res
+    .status(200)
+    .json(new ApiResponse(200, updatedEvent, "Event updated successfully."));
 });
 
 /*-------------------------------------------Delete Event---------------------------------------*/
@@ -108,7 +124,9 @@ const deleteEvent = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Event not found.");
   }
 
-  res.status(200).json(new ApiResponse(200, null, "Event deleted successfully."));
+  res
+    .status(200)
+    .json(new ApiResponse(200, null, "Event deleted successfully."));
 });
 
 /*-------------------------------------------Upload Photos---------------------------------------*/
@@ -116,6 +134,8 @@ const deleteEvent = asyncHandler(async (req, res) => {
 const uploadPhotos = asyncHandler(async (req, res) => {
   const { eventId } = req.params;
   const { eventName } = req.body;
+  
+  const eventSlug = slugify(`${eventName}`, { lower: true, strict: true });
 
   if (!eventName) {
     throw new ApiError(400, "Event name is required");
@@ -125,7 +145,8 @@ const uploadPhotos = asyncHandler(async (req, res) => {
     throw new ApiError(400, "No files uploaded");
   }
 
-  const event = await Event.findById(eventId);
+  const event = await Event.findById(eventId).populate("userId", "mobile");
+
   if (!event) {
     throw new ApiError(404, "Event not found");
   }
@@ -133,7 +154,10 @@ const uploadPhotos = asyncHandler(async (req, res) => {
     (photo) => photo.eventName === eventName
   );
   if (existingEventWithSameName) {
-    throw new ApiError(400, "Event with the same name already exists in photos");
+    throw new ApiError(
+      400,
+      "Event with the same name already exists in photos"
+    );
   }
   // Set up SSE headers
   res.writeHead(200, {
@@ -156,11 +180,9 @@ const uploadPhotos = asyncHandler(async (req, res) => {
   for (const [index, file] of req.files.entries()) {
     if (clientDisconnected) break;
 
-    const s3Path = `${req.user.mobile}/${eventName}_${eventId}_${file.originalname}`;
+    const s3Path = `${req.user.mobile}/${event.userId.mobile}/${event.name}/${eventSlug}/${file.originalname}`;
     let lastProgress = 0;
-
     try {
-
       const fileUrl = await s3Service.uploadFile(file, s3Path, (progress) => {
         // Send progress updates if client is still connected
         if (!clientDisconnected && progress > lastProgress) {
@@ -232,14 +254,19 @@ const addMorePhotos = asyncHandler(async (req, res) => {
     throw new ApiError(400, "No files uploaded");
   }
 
-  const event = await Event.findById(eventId);
+  const event = await Event.findById(eventId).populate("userId", "mobile");
   if (!event) {
     throw new ApiError(404, "Event not found");
   }
-  const eventPhotos = event.photos.find(photo => photo.eventName === eventName);
-  console.log(eventPhotos)
+  const eventPhotos = event.photos.find(
+    (photo) => photo.eventName === eventName
+  );
+  console.log(eventPhotos);
   if (!eventPhotos) {
-    throw new ApiError(400, `Event with name '${eventName}' not found in photos`);
+    throw new ApiError(
+      400,
+      `Event with name '${eventName}' not found in photos`
+    );
   }
   // Set up SSE headers
   res.writeHead(200, {
@@ -262,11 +289,10 @@ const addMorePhotos = asyncHandler(async (req, res) => {
   for (const [index, file] of req.files.entries()) {
     if (clientDisconnected) break;
 
-    const s3Path = `${req.user.mobile}/${eventName}_${eventId}_${file.originalname}`;
+    const s3Path = `${req.user.mobile}/${event.userId.mobile}/${event.name}/${eventName}/${file.originalname}`;
     let lastProgress = 0;
-
+    console.log(s3Path, "s3Path");
     try {
-
       const fileUrl = await s3Service.uploadFile(file, s3Path, (progress) => {
         // Send progress updates if client is still connected
         if (!clientDisconnected && progress > lastProgress) {
@@ -343,38 +369,53 @@ const deletePhotos = asyncHandler(async (req, res) => {
   });
 
   if (!event) {
-    throw new ApiError(404, "Event not found or no photos exist for this event");
+    throw new ApiError(
+      404,
+      "Event not found or no photos exist for this event"
+    );
   }
 
   const eventPhotos = event.photos[0]?.photos || [];
 
-  const photosToDelete = eventPhotos.filter(photo =>
+  const photosToDelete = eventPhotos.filter((photo) =>
     photoUrls.includes(photo.s3Path)
   );
 
   if (photosToDelete.length === 0) {
-    throw new ApiError(404, "No matching photos found to delete for this event");
+    throw new ApiError(
+      404,
+      "No matching photos found to delete for this event"
+    );
   }
 
-  console.log(photosToDelete)
+  console.log(photosToDelete);
   try {
     for (const photo of photosToDelete) {
       await s3Service.deleteFile(photo.s3Path);
     }
 
-    event.photos[0].photos = event.photos[0].photos.filter(photo =>
-      !photoUrls.includes(photo.s3Path)
+    event.photos[0].photos = event.photos[0].photos.filter(
+      (photo) => !photoUrls.includes(photo.s3Path)
     );
     await event.save();
 
-    res.status(200).json(ApiResponse(200,
-      photosToDelete
-      , "Photos deleted successfully"));
+    res
+      .status(200)
+      .json(ApiResponse(200, photosToDelete, "Photos deleted successfully"));
   } catch (error) {
     console.error("Error deleting photos:", error.message);
     throw new ApiError(500, `Error deleting photos: ${error.message}`);
   }
 });
 
-
-export { createEvent, getEventById, getEventsPhotographer, getEventsUser, updateEvent, deleteEvent, uploadPhotos, addMorePhotos, deletePhotos }
+export {
+  createEvent,
+  getEventById,
+  getEventsPhotographer,
+  getEventsUser,
+  updateEvent,
+  deleteEvent,
+  uploadPhotos,
+  addMorePhotos,
+  deletePhotos,
+};
