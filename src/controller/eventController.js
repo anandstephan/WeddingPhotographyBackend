@@ -410,6 +410,101 @@ const deletePhotos = asyncHandler(async (req, res) => {
   }
 });
 
+/*----------------------------------------------------add selected images------------------------*/
+
+const updateSelectedPhotos = async (req, res) => {
+  try {
+    const { eventId, imageUrls } = req.body;
+
+    if (!eventId || !Array.isArray(imageUrls)) {
+      return res.status(400).json({
+        message: "eventId and imageUrls array are required.",
+      });
+    }
+
+    // Find the event by ID
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        message: "Event not found.",
+      });
+    }
+
+    // Update the isSelected field and build the selected array
+    event.photos.forEach((photoDetail) => {
+      photoDetail.photos.forEach((photo) => {
+        if (imageUrls.includes(photo.s3Path)) {
+          photo.isSelected = true;
+          if (!event.selected.includes(photo.s3Path)) {
+            event.selected.push(photo.s3Path);
+          }
+        }
+      });
+    });
+
+    // Save the updated event
+    await event.save();
+
+    res.status(200).json({
+      message: "Photos updated successfully.",
+      event,
+    });
+  } catch (error) {
+    console.error("Error updating photos:", error);
+    res.status(500).json({
+      message: "An error occurred while updating photos.",
+      error: error.message,
+    });
+  }
+};
+
+const removeSelectedPhotos = async (req, res) => {
+  try {
+    const { eventId, imageUrls } = req.body;
+
+    if (!eventId || !Array.isArray(imageUrls)) {
+      return res.status(400).json({
+        message: "eventId and imageUrls array are required.",
+      });
+    }
+
+    // Find the event by ID
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        message: "Event not found.",
+      });
+    }
+
+    // Remove selection from photos and update selected array
+    event.photos.forEach((photoDetail) => {
+      photoDetail.photos.forEach((photo) => {
+        if (imageUrls.includes(photo.s3Path)) {
+          photo.isSelected = false;
+          const index = event.selected.indexOf(photo.s3Path);
+          if (index !== -1) {
+            event.selected.splice(index, 1);
+          }
+        }
+      });
+    });
+
+    // Save the updated event
+    await event.save();
+
+    res.status(200).json({
+      message: "Photos selection removed successfully.",
+      event,
+    });
+  } catch (error) {
+    console.error("Error removing selected photos:", error);
+    res.status(500).json({
+      message: "An error occurred while removing selected photos.",
+      error: error.message,
+    });
+  }
+};
+
 export {
   createEvent,
   getEventById,
@@ -420,4 +515,6 @@ export {
   uploadPhotos,
   addMorePhotos,
   deletePhotos,
+  updateSelectedPhotos,
+  removeSelectedPhotos,
 };

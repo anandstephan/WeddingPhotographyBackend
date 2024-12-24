@@ -111,6 +111,10 @@ const eventSchema = new mongoose.Schema(
       type: [photoDetailSchema], 
       default: [],
     },
+    selected:{
+      type:Array,
+      default: []
+    }
   },
   {
     timestamps: true,
