@@ -10,7 +10,7 @@ const s3Service = new s3ServiceWithProgress();
 /*------------------------------------------------Create a Review---------------------------------------------*/
 
 const createReview = asyncHandler(async (req, res) => {
-    const { photographerId, stars, comment } = req.body;
+    const { propertyId, stars, comment } = req.body;
     const userId = req.user._id;
     let imageUrl;
 

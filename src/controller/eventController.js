@@ -134,7 +134,9 @@ const deleteEvent = asyncHandler(async (req, res) => {
 const uploadPhotos = asyncHandler(async (req, res) => {
   const { eventId } = req.params;
   const { eventName } = req.body;
-  
+  if (!req.user) {
+    throw new ApiError(401, "User not authenticated");
+  }
   const eventSlug = slugify(`${eventName}`, { lower: true, strict: true });
 
   if (!eventName) {
@@ -180,7 +182,7 @@ const uploadPhotos = asyncHandler(async (req, res) => {
   for (const [index, file] of req.files.entries()) {
     if (clientDisconnected) break;
 
-    const s3Path = `${req.user.mobile}/${event.userId.mobile}/${event.name}/${eventSlug}/${file.originalname}`;
+    const s3Path = `${req.user?.mobile}/${event.userId.mobile}/${event.name}/${eventSlug}/${file.originalname}`;
     let lastProgress = 0;
     try {
       const fileUrl = await s3Service.uploadFile(file, s3Path, (progress) => {
