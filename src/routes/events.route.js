@@ -11,6 +11,7 @@ import {
   deletePhotos,
   updateSelectedPhotos,
   removeSelectedPhotos,
+  getSelectedPhotos,
 } from "../controller/eventController.js";
 import { multerUpload } from "../middlewere/multer.middlewere.js";
 const eventRouter = Router();
@@ -37,5 +38,6 @@ eventRouter.post(
 eventRouter.delete("/delete-photos/:eventId", deletePhotos);
 eventRouter.post("/add-selected-images", updateSelectedPhotos);
 eventRouter.post("/remove-selected-images", removeSelectedPhotos);
+eventRouter.get("/selected-images/:eventId", getSelectedPhotos);
 
 export default eventRouter;
