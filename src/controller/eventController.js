@@ -422,26 +422,31 @@ const updateSelectedPhotos = asyncHandler(async (req, res) => {
 
   const event = await Event.findById(eventId);
   if (!event) {
-    throw new ApiError(400, "Event not found.");
+    throw new ApiError(404, "Event not found.");
   }
 
-  // Update the isSelected field and build the selected array
+  // Update `isSelected` to true for provided imageUrls and false for others
+  const updatedSelected = [];
   event.photos.forEach((photoDetail) => {
     photoDetail.photos.forEach((photo) => {
       if (imageUrls.includes(photo.s3Path)) {
         photo.isSelected = true;
-        if (!event.selected.includes(photo.s3Path)) {
-          event.selected.push(photo.s3Path);
+        if (!updatedSelected.includes(photo.s3Path)) {
+          updatedSelected.push(photo.s3Path);
         }
+      } else {
+        photo.isSelected = false;
       }
     });
   });
+
+  event.selected = updatedSelected;
 
   await event.save();
 
   res
     .status(200)
-    .json(asyncHandler(200, event, "Photos updated successfully."));
+    .json(new ApiResponse(200, event, "selection updated successfully."));
 });
 
 const removeSelectedPhotos = async (req, res) => {
@@ -491,68 +496,59 @@ const removeSelectedPhotos = async (req, res) => {
   }
 };
 
-const getSelectedPhotos = async (req, res) => {
-  try {
-    const { eventId } = req.params;
+const getSelectedPhotos = asyncHandler(async (req, res) => {
+  const { eventId } = req.params;
 
-    if (!eventId) {
-      return res.status(400).json({
-        message: "eventId is required.",
-      });
-    }
+  if (!eventId) {
+    return res.status(400).json({
+      message: "eventId is required.",
+    });
+  }
 
-    // Find the event by ID and use aggregation to filter selected photos
-    const event = await Event.aggregate([
-      { $match: { _id: new mongoose.Types.ObjectId(eventId) } },
-      {
-        $project: {
-          _id: 1, // Include event ID in the result
-          selectedPhotos: {
-            $filter: {
-              input: {
-                $reduce: {
-                  input: "$photos", // Access the 'photos' array in the event
-                  initialValue: [],
-                  in: {
-                    $concatArrays: [
-                      "$$value",
-                      {
-                        $filter: {
-                          input: "$$this.photos", // Access each photo's 'photos' array
-                          as: "photo",
-                          cond: { $eq: ["$$photo.isSelected", true] }, // Filter photos where isSelected is true
-                        },
+  const event = await Event.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(eventId) } },
+    {
+      $project: {
+        _id: 1, // Include event ID in the result
+        selectedPhotos: {
+          $filter: {
+            input: {
+              $reduce: {
+                input: "$photos", // Access the 'photos' array in the event
+                initialValue: [],
+                in: {
+                  $concatArrays: [
+                    "$$value",
+                    {
+                      $filter: {
+                        input: "$$this.photos", // Access each photo's 'photos' array
+                        as: "photo",
+                        cond: { $eq: ["$$photo.isSelected", true] }, // Filter photos where isSelected is true
                       },
-                    ],
-                  },
+                    },
+                  ],
                 },
               },
-              as: "photo",
-              cond: { $eq: ["$$photo.isSelected", true] }, // Ensure photos are selected
             },
+            as: "photo",
+            cond: { $eq: ["$$photo.isSelected", true] }, // Ensure photos are selected
           },
         },
       },
-    ]);
+    },
+  ]);
 
-    if (!event || event.length === 0) {
-      return res.status(404).json({
-        message: "Event not found or no selected photos.",
-      });
-    }
-
-    res.status(200).json({
-      message: "Selected photos retrieved successfully.",
-      selectedPhotos: event[0].selectedPhotos, // Return the filtered selected photos
-    });
-  } catch (error) {
-    console.error("Error retrieving selected photos:", error);
-    res.status(500).json({
-      message: "An error occurred while retrieving selected photos.",
-      error: error.message,
+  if (!event || event.length === 0) {
+    return res.status(404).json({
+      message: "Event not found or no selected photos.",
     });
   }
-};
+
+  res.status(200).json({
+    message: "Selected photos retrieved successfully.",
+    selectedPhotos: event[0].selectedPhotos, // Return the filtered selected photos
+  });
+});
 
 export {
   createEvent,

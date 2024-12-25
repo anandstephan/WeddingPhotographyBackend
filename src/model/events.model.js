@@ -114,7 +114,8 @@ const eventSchema = new mongoose.Schema(
     selected:{
       type:Array,
       default: []
-    }
+    },
+
   },
   {
     timestamps: true,

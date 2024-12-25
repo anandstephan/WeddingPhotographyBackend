@@ -9,7 +9,6 @@ const transactionSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
     },
     packageId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -21,18 +20,15 @@ const transactionSchema = new mongoose.Schema({
     },
     paymentStatus: {
         type: String,
-        enum: ['success', 'failed', 'pending', 'initiated'],
+        // enum: ['success', 'failed', 'pending', 'initiated'],
         default: 'initiated'
     },
     paymentMethod: {
         type: String,
-        enum: ['credit_card', 'debit_card', 'paypal', 'net_banking', 'upi', 'cod'],
-        required: true
+        // enum: ['credit_card', 'debit_card', 'paypal', 'net_banking', 'upi', 'cod'],
     },
     transactionId: {
         type: String,
-        required: true,
-        unique: true
     },
     paymentDetails:{
         type: mongoose.Schema.Types.Mixed,
