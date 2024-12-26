@@ -4,16 +4,112 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { Event } from "../model/events.model.js";
 import { User } from "../model/user.model.js";
 import s3ServiceWithProgress from "../config/awsS3.config.js";
+import { PhotoPackage } from "../model/photoPackage.model.js";
 import mongoose from "mongoose";
 import slugify from "slugify";
+import { check, validationResult } from "express-validator";
+import { Transaction } from "../model/transaction.model.js";
+import { razorpay } from "../config/razorPayConfig.js";
 
 const s3Service = new s3ServiceWithProgress();
+
+const validateCreateEvent = [
+  check("packageId").isMongoId().withMessage("Invalid package ID"),
+  check("transactionId").isMongoId().withMessage("Invalid transaction ID"),
+  check("photographerId").isMongoId().withMessage("Invalid photographer ID"),
+  check("name")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("Event name is required"),
+  check("eventDate").isISO8601().toDate().withMessage("Invalid event date"),
+  check("venue.name")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("Venue name is required"),
+  check("venue.street")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("Street is required"),
+  check("venue.city")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("City is required"),
+  check("venue.state")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("State is required"),
+  check("venue.postalCode")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("Postal code is required"),
+  check("venue.country")
+    .isString()
+    .trim()
+    .notEmpty()
+    .withMessage("Country is required"),
+];
 /*-------------------------------------------Create Event---------------------------------------*/
 const createEvent = asyncHandler(async (req, res) => {
-  const eventData = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json(new ApiError(400, "Validation Error", errors));
+  }
+  const {
+    razorpay_payment_id,
+    packageId,
+    transactionId,
+    photographerId,
+    name,
+    eventDate,
+    venue,
+  } = req.body;
 
-  const slug = slugify(eventData.name, { lower: true, strict: true });
-  eventData.name = slug;
+  console.log(req.body);
+  const userId = req.user._id;
+  const payment = await razorpay.payments.fetch(razorpay_payment_id);
+  console.log(payment);
+  const transaction = await Transaction.findById(transactionId);
+  console.log("transaction", transaction);
+  if (!transaction) {
+    return res
+      .status(404)
+      .json(new ApiResponse(404, null, "Transaction not found"));
+  }
+  
+  transaction.transactionId = payment.id;
+  transaction.paymentDetails = payment;
+  transaction.paymentStatus = payment.status;
+  transaction.paymentMethod = payment.method;
+  await transaction.save();
+  // Fetch the package details by ID
+  const photoPackage = await PhotoPackage.findById(packageId).lean();
+  console.log(photoPackage);
+  if (!photoPackage) {
+    return res
+      .status(404)
+      .json(new ApiResponse(404, null, "Photo package not found"));
+  }
+  const { _id, ...cleanPhotoPackage } = photoPackage;
+  // Create slug for the event name
+  const slug = slugify(name, { lower: true, strict: true });
+
+  const eventData = {
+    photoPackageDetails: cleanPhotoPackage,
+    transaction,
+    userId,
+    photographerId,
+    name: slug,
+    eventDate,
+    venue,
+  };
+
+  // Create and save the event
   const newEvent = new Event(eventData);
   await newEvent.save();
 
@@ -563,4 +659,5 @@ export {
   updateSelectedPhotos,
   removeSelectedPhotos,
   getSelectedPhotos,
+  validateCreateEvent,
 };

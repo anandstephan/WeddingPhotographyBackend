@@ -6,5 +6,4 @@ photoPackageRoutes.get("/get-package/:id", getPhotoPackageById)
 photoPackageRoutes.get("/get-list/:photographerId", getAllPhotoPackages)
 photoPackageRoutes.put("/update/:id", updatePhotoPackage)
 photoPackageRoutes.delete("/delete/:id", deletePhotoPackage)
-
 export default photoPackageRoutes;

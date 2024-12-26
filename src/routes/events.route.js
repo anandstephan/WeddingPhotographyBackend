@@ -12,11 +12,12 @@ import {
   updateSelectedPhotos,
   removeSelectedPhotos,
   getSelectedPhotos,
+  validateCreateEvent,
 } from "../controller/eventController.js";
 import { multerUpload } from "../middlewere/multer.middlewere.js";
 const eventRouter = Router();
 
-eventRouter.post("/create", createEvent);
+eventRouter.post("/create", validateCreateEvent, createEvent);
 eventRouter.get("/get/:id", getEventById);
 eventRouter.get("/get-list-user/:userId?", getEventsUser);
 eventRouter.get(

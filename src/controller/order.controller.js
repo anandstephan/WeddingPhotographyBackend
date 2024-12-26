@@ -39,13 +39,12 @@ const createOrder = asyncHandler(async (req, res) => {
 
   // Calculate payment amount
   const amountToPay = packageData.price;
-
-  let transactionId = null;
+  let transactionId = `TXN_${uid()}`;
   let paymentResponse = null;
 
   if (user.role === "photographer") {
     // Initiate Razorpay payment for photographers
-    transactionId = `TXN_${uid()}`;
+
     try {
       paymentResponse = await initiateOrder(
         amountToPay,
@@ -56,6 +55,7 @@ const createOrder = asyncHandler(async (req, res) => {
       throw new ApiError(error.statusCode, error.error);
     }
   }
+  console.log("paymentResponse", paymentResponse);
   // Save transaction to the database
   const transaction = new Transaction({
     type: user.role,
@@ -63,7 +63,7 @@ const createOrder = asyncHandler(async (req, res) => {
     packageId: packageData._id,
     amount: amountToPay,
     currency: currency,
-    transactionId: paymentResponse ? paymentResponse.order_id : "",
+    transactionId: paymentResponse ? paymentResponse.order_id : transactionId,
     paymentStatus: "initiated",
   });
   await transaction.save();
@@ -100,14 +100,12 @@ const verifyOrder = asyncHandler(async (req, res, next) => {
       return res.status(400).json({ error: "Payment verification failed" });
     }
     const payment = await razorpay.payments.fetch(razorpay_payment_id);
-    console.log("payment", payment);
     const transaction = await Transaction.findOne({
       $or: [
         { transactionId: razorpay_order_id },
         { transactionId: razorpay_payment_id },
       ],
     });
-    console.log("transaction", transaction);
     transaction.transactionId = payment.id;
     req.paymentDetails = payment;
     req.transaction = transaction;

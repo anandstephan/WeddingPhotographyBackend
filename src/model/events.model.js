@@ -33,7 +33,6 @@ const photoDetailSchema = new mongoose.Schema(
   }
 );
 
-
 const venueSchema = new mongoose.Schema(
   {
     name: {
@@ -68,15 +67,19 @@ const venueSchema = new mongoose.Schema(
     },
   },
   {
-    _id: false, 
+    _id: false,
   }
 );
 
 const eventSchema = new mongoose.Schema(
   {
-    packageId: {
+    photoPackageDetails: {
+      type: Object,
+      required: true,
+    },
+    transaction: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "PhotoPackage",
+      ref: "Transaction",
       required: true,
     },
     userId: {
@@ -108,14 +111,13 @@ const eventSchema = new mongoose.Schema(
       default: "upcoming",
     },
     photos: {
-      type: [photoDetailSchema], 
+      type: [photoDetailSchema],
       default: [],
     },
-    selected:{
-      type:Array,
-      default: []
+    selected: {
+      type: Array,
+      default: [],
     },
-
   },
   {
     timestamps: true,

@@ -8,19 +8,18 @@ const razorpay = new Razorpay({
 const createOrder = async (amount, orderId, currency) => {
   const options = {
     amount: amount * 100, // amount in smallest currency unit (paise for INR)
-    currency: currency,//'INR'
+    currency: currency, //'INR'
     receipt: orderId,
-    payment_capture: 1 // auto capture
+    payment_capture: 1, // auto capture
   };
+  console.log("options", options);
   const order = await razorpay.orders.create(options);
-  return ({
+  return {
     order_id: order.id,
     currency: order.currency,
     amount: order.amount,
-    receipt: order.receipt
-  });
-
+    receipt: order.receipt,
+  };
 };
 
-
-export { razorpay, createOrder }
+export { razorpay, createOrder };
