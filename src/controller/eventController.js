@@ -70,18 +70,19 @@ const createEvent = asyncHandler(async (req, res) => {
     venue,
   } = req.body;
 
-  console.log(req.body);
   const userId = req.user._id;
+  const existingEvent = await Event.findOne({ transaction: transactionId });
+  if (existingEvent) {
+    throw new ApiError(409, "Transaction is already done with an event");
+  }
   const payment = await razorpay.payments.fetch(razorpay_payment_id);
-  console.log(payment);
   const transaction = await Transaction.findById(transactionId);
-  console.log("transaction", transaction);
   if (!transaction) {
     return res
       .status(404)
       .json(new ApiResponse(404, null, "Transaction not found"));
   }
-  
+
   transaction.transactionId = payment.id;
   transaction.paymentDetails = payment;
   transaction.paymentStatus = payment.status;
@@ -89,7 +90,6 @@ const createEvent = asyncHandler(async (req, res) => {
   await transaction.save();
   // Fetch the package details by ID
   const photoPackage = await PhotoPackage.findById(packageId).lean();
-  console.log(photoPackage);
   if (!photoPackage) {
     return res
       .status(404)
@@ -101,7 +101,7 @@ const createEvent = asyncHandler(async (req, res) => {
 
   const eventData = {
     photoPackageDetails: cleanPhotoPackage,
-    transaction,
+    transaction: transactionId,
     userId,
     photographerId,
     name: slug,
