@@ -42,4 +42,7 @@ integratedRoutes.use("/reviews", verifyJwtToken, reviewRouter);
 import paymentRoute from "./payment.routes.js";
 integratedRoutes.use("/payments", verifyJwtToken, paymentRoute);
 
+/*-----------------------------------------transaction------------------------------------*/
+import transactionRouter from "./transaction.routes.js";
+integratedRoutes.use("/transaction", verifyJwtToken, transactionRouter);
 export default integratedRoutes;

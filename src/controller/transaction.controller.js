@@ -5,6 +5,7 @@ import { Transaction } from "../model/transaction.model.js";
 import { StoragePackage } from "../model/storagePackage.model.js";
 import { isValidObjectId } from "../utils/helper.js";
 import { generateTransactionId } from "../utils/helper.js";
+import { razorpay } from "../config/razorPayConfig.js";
 
 /*----------------------------------------------create transaction------------------------------------------*/
 
@@ -92,4 +93,29 @@ const updateTransaction = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, updatedTransaction, "Transaction updated successfully"));
 });
 
-export { createTransaction, getAllTransactions, getTransactionById, updateTransaction }
+const updateTransactionDetails = asyncHandler(async (req, res) => {
+    const { transactionId } = req.params;
+    const { razorpay_payment_id } = req.body;
+
+    if (!isValidObjectId(transactionId)) {
+        throw new ApiError(400, "Invalid transaction ID");
+    }
+    const payment = await razorpay.payments.fetch(razorpay_payment_id);
+    const transaction = await Transaction.findById(transactionId);
+    if (!transaction) {
+      return res
+        .status(404)
+        .json(new ApiResponse(404, null, "Transaction not found"));
+    }
+  
+    transaction.transactionId = payment.id;
+    transaction.paymentDetails = payment;
+    transaction.paymentStatus = payment.status;
+    transaction.paymentMethod = payment.method;
+    const updatedTransaction = await transaction.save();
+    return res
+        .status(200)
+        .json(new ApiResponse(200, updatedTransaction, "Transaction updated successfully"));
+});
+
+export { createTransaction, getAllTransactions, getTransactionById, updateTransaction,updateTransactionDetails }
