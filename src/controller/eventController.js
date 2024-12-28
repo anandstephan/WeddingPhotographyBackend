@@ -61,7 +61,7 @@ const createEvent = asyncHandler(async (req, res) => {
     return res.status(400).json(new ApiError(400, "Validation Error", errors));
   }
   const {
-    razorpay_payment_id,
+    // razorpay_payment_id,
     packageId,
     transactionId,
     photographerId,
@@ -75,7 +75,7 @@ const createEvent = asyncHandler(async (req, res) => {
   if (existingEvent) {
     throw new ApiError(409, "Transaction is already done with an event");
   }
-  const payment = await razorpay.payments.fetch(razorpay_payment_id);
+  // const payment = await razorpay.payments.fetch(razorpay_payment_id);
   const transaction = await Transaction.findById(transactionId);
   if (!transaction) {
     return res
@@ -83,11 +83,11 @@ const createEvent = asyncHandler(async (req, res) => {
       .json(new ApiResponse(404, null, "Transaction not found"));
   }
 
-  transaction.transactionId = payment.id;
-  transaction.paymentDetails = payment;
-  transaction.paymentStatus = payment.status;
-  transaction.paymentMethod = payment.method;
-  await transaction.save();
+  // transaction.transactionId = payment.id;
+  // transaction.paymentDetails = payment;
+  // transaction.paymentStatus = payment.status;
+  // transaction.paymentMethod = payment.method;
+  // await transaction.save();
   // Fetch the package details by ID
   const photoPackage = await PhotoPackage.findById(packageId).lean();
   if (!photoPackage) {
