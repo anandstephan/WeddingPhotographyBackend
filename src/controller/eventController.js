@@ -98,7 +98,9 @@ const createEvent = asyncHandler(async (req, res) => {
   const { _id, ...cleanPhotoPackage } = photoPackage;
   // Create slug for the event name
   const slug = slugify(name, { lower: true, strict: true });
-
+  if (new Date(eventDate) < new Date()) {
+    throw new ApiError(400, "Event date must be in the future");
+  }
   const eventData = {
     photoPackageDetails: cleanPhotoPackage,
     transaction: transactionId,
