@@ -249,7 +249,6 @@ const getEventsFlatListUser = asyncHandler(async (req, res) => {
     photographerEmail: event.photographerId?.email || null,
     photographerMobile: event.photographerId?.mobile || null,
   }));
-
   res
     .status(200)
     .json(new ApiResponse(200, flatEvents, "Events fetched successfully"));

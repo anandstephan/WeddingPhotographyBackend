@@ -14,7 +14,6 @@ import { validateWebhookSignature } from "razorpay/dist/utils/razorpay-utils.js"
 const createOrder = asyncHandler(async (req, res) => {
   const { packageId, currency = "INR" } = req.body;
   const user = req.user;
-  console.log(user, "user");
   if (!packageId || !isValidObjectId(packageId)) {
     throw new ApiError(400, "Invalid package ID");
   }
@@ -55,7 +54,6 @@ const createOrder = asyncHandler(async (req, res) => {
       throw new ApiError(error.statusCode, error.error);
     }
   }
-  console.log("paymentResponse", paymentResponse);
   // Save transaction to the database
   const transaction = new Transaction({
     type: user.role,
@@ -70,6 +68,7 @@ const createOrder = asyncHandler(async (req, res) => {
   if (!paymentResponse) {
     paymentResponse = transaction;
   }
+  
   res
     .status(200)
     .json(
