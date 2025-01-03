@@ -175,7 +175,6 @@ const getEventsUser = asyncHandler(async (req, res) => {
     user = existingUser;
   }
   const events = await Event.find({ userId: user._id })
-    .populate("packageId", "name photoCount price")
     .populate("userId", "name mobile email")
     .populate("photographerId", "name mobile email");
   if (!events || !events.length) {

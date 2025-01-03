@@ -28,5 +28,4 @@ router.get("/eventCategory/get-grouped-list", getCategoriesGroupedByType)
 router.get("/photographer-profile/:photographerId", getPhotographerProfile)
 router.post("/photographer-list", getPhotographersList)
 
-
 export default router;
