@@ -111,6 +111,11 @@ const loginUser = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(404, "User does not exist");
   }
+  if (!user.isActive) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "No Active User Found!"));
+  }
   const isPasswordValid = await user.isPasswordCorrect(password);
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials");
@@ -377,6 +382,11 @@ const loginWithMobile = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Mobile number is required");
   }
   let existingUser = await User.findOne({ mobile });
+  if (!existingUser.isActive) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, null, "No Active User Found!"));
+  }
   const isVerified = await verifyOTP(mobile, otp);
   if (!isVerified) {
     throw new ApiError(400, "Invalid OTP");
@@ -492,9 +502,26 @@ const faceIdImageUpload = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Avatar image updated successfully"));
 });
 
-const removeUser = asyncHandler(()=>{
-  
-})
+const removeUser = asyncHandler(async (req, res) => {
+  const user = req.user;
+  // Deactivate the user
+  const deActivateUser = await User.findByIdAndUpdate(
+    user._id,
+    { isActive: false },
+    { new: true }
+  );
+  if (!deActivateUser) {
+    return res
+      .status(404)
+      .json(
+        new ApiResponse(404, null, "User not found or unable to deactivate")
+      );
+  }
+  res
+    .status(200)
+    .json(new ApiResponse(200, null, "User deactivated successfully"));
+});
+
 export {
   registerUser,
   loginUser,
@@ -510,4 +537,5 @@ export {
   loginAdmin,
   changeAvatarImage,
   faceIdImageUpload,
+  removeUser,
 };

@@ -8,6 +8,7 @@ import {
   updateAccountDetails,
   changeAvatarImage,
   faceIdImageUpload,
+  removeUser,
 } from "../controller/admin.controller.js";
 import { multerUpload } from "../middlewere/multer.middlewere.js";
 
@@ -20,6 +21,7 @@ router.get("/logout", logoutUser);
 router.put("/change-current-password", changeCurrentPassword);
 router.get("/refresh-access-token", refreshAccessToken);
 router.post("/update-avatar", multerUpload.single("avatar"), changeAvatarImage);
+router.post("/deActivate-account", removeUser);
 router.post(
   "/update-face-id",
   multerUpload.single("faceId"),
