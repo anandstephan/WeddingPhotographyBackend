@@ -138,7 +138,8 @@ const getEventById = asyncHandler(async (req, res) => {
 /*------------------------------------Get All Events forphotographer---------------------------------------*/
 const getEventsPhotographer = asyncHandler(async (req, res) => {
   let user = req.user;
-  const { status = "upcoming" } = req.query;
+  const { status } = req.query;
+
   if (req.params.photographerId) {
     const photographer = await User.findOne({
       _id: req.params.photographerId,
@@ -149,25 +150,32 @@ const getEventsPhotographer = asyncHandler(async (req, res) => {
     }
     user = photographer;
   }
-  const events = await Event.find({ photographerId: user._id, status })
+
+  const queryCondition = { photographerId: user._id };
+  if (status) {
+    queryCondition.status = status;
+  }
+  const events = await Event.find(queryCondition)
     .populate("packageId", "name photoCount price")
     .populate("userId", "name mobile email")
     .populate("photographerId", "name mobile email");
+
   if (!events || !events.length) {
     return res
       .status(200)
-      .json(new ApiResponse(200, [], `No ${status} Event found!`));
+      .json(new ApiResponse(200, [], `No ${status || ""} events found!`));
   }
 
   res
     .status(200)
     .json(new ApiResponse(200, events, "Events fetched successfully"));
 });
+
 /*------------------------------------Get All Events user---------------------------------------*/
 
 const getEventsUser = asyncHandler(async (req, res) => {
   let user = req.user;
-  const { status = "upcoming" } = req.query;
+  const { status } = req.query;
   if (req.params.userId) {
     const existingUser = await User.findOne({
       _id: req.params.userId,
@@ -179,15 +187,20 @@ const getEventsUser = asyncHandler(async (req, res) => {
     user = existingUser;
   }
 
+  const queryCondition = { userId: user._id };
+  if (status) {
+    queryCondition.status = status;
+  }
+  console.log(queryCondition);
   // Fetch events based on user ID and status
-  const events = await Event.find({ userId: user._id, status })
+  const events = await Event.find(queryCondition)
     .populate("userId", "name mobile email")
     .populate("photographerId", "name mobile email");
 
   if (!events || !events.length) {
     return res
       .status(200)
-      .json(new ApiResponse(200, [], `No ${status} Event found!`));
+      .json(new ApiResponse(200, [], `No ${status || ""} Event found!`));
   }
 
   res
