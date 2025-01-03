@@ -138,6 +138,7 @@ const getEventById = asyncHandler(async (req, res) => {
 /*------------------------------------Get All Events forphotographer---------------------------------------*/
 const getEventsPhotographer = asyncHandler(async (req, res) => {
   let user = req.user;
+  const { status = "upcoming" } = req.query;
   if (req.params.photographerId) {
     const photographer = await User.findOne({
       _id: req.params.photographerId,
@@ -148,12 +149,14 @@ const getEventsPhotographer = asyncHandler(async (req, res) => {
     }
     user = photographer;
   }
-  const events = await Event.find({ photographerId: user._id })
+  const events = await Event.find({ photographerId: user._id, status })
     .populate("packageId", "name photoCount price")
     .populate("userId", "name mobile email")
     .populate("photographerId", "name mobile email");
   if (!events || !events.length) {
-    throw new ApiError(404, "No events found.");
+    return res
+      .status(200)
+      .json(new ApiResponse(200, [], `No ${status} Event found!`));
   }
 
   res
@@ -164,27 +167,34 @@ const getEventsPhotographer = asyncHandler(async (req, res) => {
 
 const getEventsUser = asyncHandler(async (req, res) => {
   let user = req.user;
+  const { status = "upcoming" } = req.query;
   if (req.params.userId) {
     const existingUser = await User.findOne({
       _id: req.params.userId,
       role: "user",
     });
     if (!existingUser) {
-      throw new ApiError(404, "user not found!");
+      throw new ApiError(404, "User not found!");
     }
     user = existingUser;
   }
-  const events = await Event.find({ userId: user._id })
+
+  // Fetch events based on user ID and status
+  const events = await Event.find({ userId: user._id, status })
     .populate("userId", "name mobile email")
     .populate("photographerId", "name mobile email");
+
   if (!events || !events.length) {
-    throw new ApiError(404, "No events found.");
+    return res
+      .status(200)
+      .json(new ApiResponse(200, [], `No ${status} Event found!`));
   }
 
   res
     .status(200)
     .json(new ApiResponse(200, events, "Events fetched successfully"));
 });
+
 /*-------------------------------------------Update Event---------------------------------------*/
 const updateEvent = asyncHandler(async (req, res) => {
   const { id } = req.params;

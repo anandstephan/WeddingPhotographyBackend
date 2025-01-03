@@ -11,7 +11,6 @@ class s3ServiceWithProgress {
             },
         });
     }
-
     async uploadFile(file, path, progressCallback) {
         const upload = new Upload({
             client: this.s3Client,
