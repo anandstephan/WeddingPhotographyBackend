@@ -208,6 +208,53 @@ const getEventsUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, events, "Events fetched successfully"));
 });
 
+const getEventsFlatListUser = asyncHandler(async (req, res) => {
+  let user = req.user;
+  const { status } = req.query;
+
+  if (req.params.userId) {
+    const existingUser = await User.findOne({
+      _id: req.params.userId,
+      role: "user",
+    });
+    if (!existingUser) {
+      throw new ApiError(404, "User not found!");
+    }
+    user = existingUser;
+  }
+
+  const queryCondition = { userId: user._id };
+  if (status) {
+    queryCondition.status = status;
+  }
+
+  const events = await Event.find(queryCondition)
+    .populate("photographerId", "name email mobile")
+    .select("_id name photographerId eventDate status");
+
+  if (!events || !events.length) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, [], `No ${status || ""} Event found!`));
+  }
+
+  // Transform the events to a flat structure
+  const flatEvents = events.map((event) => ({
+    eventId: event._id || null,
+    eventName: event.name || null,
+    eventDate: event.eventDate || null,
+    eventStatus: event.status || null,
+    photographerId: event.photographerId?._id || null,
+    photographerName: event.photographerId?.name || null,
+    photographerEmail: event.photographerId?.email || null,
+    photographerMobile: event.photographerId?.mobile || null,
+  }));
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, flatEvents, "Events fetched successfully"));
+});
+
 /*-------------------------------------------Update Event---------------------------------------*/
 const updateEvent = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -684,4 +731,5 @@ export {
   removeSelectedPhotos,
   getSelectedPhotos,
   validateCreateEvent,
+  getEventsFlatListUser,
 };

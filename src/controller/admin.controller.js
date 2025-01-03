@@ -492,6 +492,9 @@ const faceIdImageUpload = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "Avatar image updated successfully"));
 });
 
+const removeUser = asyncHandler(()=>{
+  
+})
 export {
   registerUser,
   loginUser,

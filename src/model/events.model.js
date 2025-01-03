@@ -7,6 +7,10 @@ const photoDetailSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    coverImage:{
+      type: String,
+      trim: true,
+    },
     photos: {
       type: [
         {

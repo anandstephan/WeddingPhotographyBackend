@@ -13,6 +13,7 @@ import {
   removeSelectedPhotos,
   getSelectedPhotos,
   validateCreateEvent,
+  getEventsFlatListUser,
 } from "../controller/eventController.js";
 import { multerUpload } from "../middlewere/multer.middlewere.js";
 const eventRouter = Router();
@@ -20,6 +21,7 @@ const eventRouter = Router();
 eventRouter.post("/create", validateCreateEvent, createEvent);
 eventRouter.get("/get/:id", getEventById);
 eventRouter.get("/get-list-user/:userId?", getEventsUser);
+eventRouter.get("/get-flat-list-user/:userId?", getEventsFlatListUser);
 eventRouter.get(
   "/get-list-photographer/:photographerId?",
   getEventsPhotographer
