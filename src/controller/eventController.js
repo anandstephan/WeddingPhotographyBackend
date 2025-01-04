@@ -16,7 +16,6 @@ const s3Service = new s3ServiceWithProgress();
 const validateCreateEvent = [
   check("packageId").isMongoId().withMessage("Invalid package ID"),
   check("transactionId").isMongoId().withMessage("Invalid transaction ID"),
-  check("photographerId").isMongoId().withMessage("Invalid photographer ID"),
   check("name")
     .isString()
     .trim()
