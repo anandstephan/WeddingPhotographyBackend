@@ -118,6 +118,8 @@ const createEvent = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, newEvent, "Event created successfully"));
 });
 
+
+
 /*-------------------------------------------Get Event by ID---------------------------------------*/
 const getEventById = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -714,6 +716,57 @@ const getSelectedPhotos = asyncHandler(async (req, res) => {
   });
 });
 
+
+/* shared  function   (took mobile numbder and push it  to the  array) */
+
+const  validateShareEvent  = [
+  
+  check("mobile")
+    .isArray()
+    .trim()
+    .notEmpty()
+    .withMessage("Mobile is required"),
+];
+const shareEvent = asyncHandler(async(req,res)=>{
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json(new ApiError(400, "Validation Error", errors));
+  }else{
+
+    // check if the  user id root user or not only root user can share the event
+    // get the event  info  
+    const {mobile ,  eventId} =  req.body;
+    
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({
+        message: "Event not found.",
+      });
+    }else{
+      if(event.userId != req.user.id){
+        return res.status(401).json({message:"Only root user can share the events"});
+      }else{
+
+    
+        console.log(mobile);
+        //  check the type of mobile 
+        if(!Array.isArray(mobile)){
+          return res.status(401).json({
+            'messsage' : 'Mobile should be array! Given mobile is of another data type so  please validate it from your end!'
+          })
+        }else{
+    
+        }
+      }
+    }
+
+
+  }
+  
+  
+ });
+
 export {
   createEvent,
   getEventById,
@@ -729,4 +782,6 @@ export {
   getSelectedPhotos,
   validateCreateEvent,
   getEventsFlatListUser,
+  shareEvent,
+  validateShareEvent
 };
