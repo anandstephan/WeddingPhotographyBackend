@@ -15,7 +15,6 @@ import {
   validateCreateEvent,
   getEventsFlatListUser,
   shareEvent,
-  validateShareEvent,
 } from "../controller/eventController.js";
 import { multerUpload } from "../middlewere/multer.middlewere.js";
 const eventRouter = Router();
@@ -44,6 +43,6 @@ eventRouter.delete("/delete-photos/:eventId", deletePhotos);
 eventRouter.post("/add-selected-images", updateSelectedPhotos);
 eventRouter.post("/remove-selected-images", removeSelectedPhotos);
 eventRouter.get("/selected-images/:eventId", getSelectedPhotos);
-eventRouter.post("/shareevent", validateShareEvent,shareEvent);
+eventRouter.post("/share-event",shareEvent);
 
 export default eventRouter;

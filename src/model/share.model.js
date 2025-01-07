@@ -8,14 +8,13 @@ const shareEventSchema =  new mongoose.Schema(
             ref : 'Event',
         }
         ,
-        sharedMobile : {
+        mobile : {
             type: String,
             required : false,
         },
-       
-        
+
     }
 )
 
-export const shareEvent  =  mongoose.model('Share',shareEventSchema);
+export const EventShare  =  mongoose.model('EventShare',shareEventSchema);
 
