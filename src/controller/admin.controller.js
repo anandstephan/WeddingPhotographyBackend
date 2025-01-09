@@ -48,6 +48,7 @@ const registerUser = asyncHandler(async (req, res) => {
   if (role === "photographer") {
     isActive = false;
   }
+
   const existedUser = await User.findOne(query);
   if (existedUser) {
     return res
@@ -55,44 +56,70 @@ const registerUser = asyncHandler(async (req, res) => {
       .json(new ApiResponse(200, null, "User already exists!"));
   }
 
-  // Create the new user
-  const user = await User.create({
-    name,
-    email,
-    mobile,
-    role,
-    isEmailVerified,
-    isMobileVerified,
-    isActive,
-    password: password || null,
-  });
+  let avatarUrl = "";
+  let s3Path = "";
+  try {
+    if (req.file) {
+      s3Path = `avatars/${Date.now()}_${req.file.originalname}`;
+      const fileUrl = await s3Service.uploadFile(req.file, s3Path);
+      avatarUrl = fileUrl.url;
+    }
 
-  const createdUser = await User.findById(user._id);
-  if (!createdUser) {
-    throw new ApiError(500, "Something went wrong while registering the user");
-  }
-  const { accessToken, refreshToken } = await createAccessOrRefreshToken(
-    createdUser._id
-  );
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
-  return res
-    .status(201)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
-    .json(
-      new ApiResponse(
-        201,
-        {
-          user: createdUser,
-          accessToken,
-          refreshToken,
-        },
-        "User registered successfully"
-      )
+    // Create the new user
+    const user = await User.create({
+      name,
+      email,
+      mobile,
+      role,
+      isEmailVerified,
+      isMobileVerified,
+      isActive,
+      password: password || null,
+      avatarUrl: avatarUrl,
+    });
+
+    const createdUser = await User.findById(user._id).select("-password");
+    if (!createdUser) {
+      throw new ApiError(
+        500,
+        "Something went wrong while registering the user"
+      );
+    }
+
+    const { accessToken, refreshToken } = await createAccessOrRefreshToken(
+      createdUser._id
     );
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+    createdUser.refreshToken = undefined;
+    return res
+      .status(201)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        new ApiResponse(
+          201,
+          {
+            user: createdUser,
+            accessToken,
+            refreshToken,
+          },
+          "User registered successfully"
+        )
+      );
+  } catch (error) {
+    if (avatarUrl) {
+      try {
+        await s3Service.deleteFile(avatarUrl);
+        console.log("Uploaded avatar deleted due to error:", error.message);
+      } catch (deleteError) {
+        console.error("Error deleting uploaded avatar:", deleteError.message);
+      }
+    }
+    throw new ApiError(500, error.message);
+  }
 });
 
 const loginUser = asyncHandler(async (req, res) => {

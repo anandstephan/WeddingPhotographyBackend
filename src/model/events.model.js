@@ -27,6 +27,10 @@ const photoDetailSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
           },
+          localPath:{
+            type: String,
+            trim: true,
+          }
         },
       ],
       default: [],
