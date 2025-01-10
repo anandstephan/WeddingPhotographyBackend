@@ -99,7 +99,7 @@ const deleteProfile = asyncHandler(async (req, res) => {
 
     const deletedUser = await User.findByIdAndDelete(userId, { session });
     if (!deletedUser) {
-      throw new ApiError(404, "User not found");
+      throw new ApiError(404, "User not found!");
     }
 
     await session.commitTransaction();

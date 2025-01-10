@@ -1,39 +1,42 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const transactionSchema = new mongoose.Schema({
-    type:{
-        type: String,
-        enum: ["user","photographer"],
-        required: true
+const transactionSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: ["user", "photographer"],
+      required: true,
     },
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
     },
     packageId: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
     },
     amount: {
-        type: Number,
-        required: true
+      type: Number,
+      required: true,
     },
     paymentStatus: {
-        type: String,
-        // enum: ['success', 'failed', 'pending', 'initiated'],
-        default: 'initiated'
+      type: String,
+      // enum: ['success', 'failed', 'pending', 'initiated'],
+      default: "initiated",
     },
     paymentMethod: {
-        type: String,
-        // enum: ['credit_card', 'debit_card', 'paypal', 'net_banking', 'upi', 'cod'],
+      type: String,
+      // enum: ['credit_card', 'debit_card', 'paypal', 'net_banking', 'upi', 'cod'],
     },
     transactionId: {
-        type: String,
+      type: String,
     },
-    paymentDetails:{
-        type: mongoose.Schema.Types.Mixed,
-        default: {}
-    }
-}, { timestamps: true });
+    paymentDetails: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+  },
+  { timestamps: true }
+);
 
-export const Transaction = mongoose.model('Transaction', transactionSchema);
+export const Transaction = mongoose.model("Transaction", transactionSchema);

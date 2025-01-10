@@ -51,13 +51,22 @@ const createStoragePackage = asyncHandler(async (req, res) => {
 
 /*--------------------------------------------get all storage packages------------------------------------------*/
 const getStoragePackages = asyncHandler(async (req, res) => {
-    const packages = await StoragePackage.find();
+    const user = req.user;
+    let filter = {};
+    
+    if (!user || user.role !== 'admin') {
+        filter.isActive = true;
+    }
+    
+    const packages = await StoragePackage.find(filter);
+    
     if (!packages || packages.length === 0) {
         throw new ApiError(404, 'No storage packages found');
     }
 
     res.status(200).json(new ApiResponse(200, packages, 'Storage packages retrieved successfully!'));
 });
+
 
 export const getStoragePackageById = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -82,7 +91,6 @@ const updateStoragePackage = asyncHandler(async (req, res) => {
     if (!isValidObjectId(id)) {
         throw new ApiError(400, 'Invalid package ID');
     }
-
     const packageExists = await StoragePackage.findOne({ name });
     if (packageExists && packageExists._id.toString() !== id) {
         throw new ApiError(409, 'Storage package with this name already exists');

@@ -6,6 +6,11 @@ const purchasedPackageSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    transactionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Transaction',
+        required: true
+    },
     packageId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'StoragePackage',

@@ -63,6 +63,9 @@ app.use((req, res, next) => {
 
 /*----------------------------------------------Routes------------------------------------------*/
 import integratedRoutes from "./routes/integrated.routes.js";
+app.get("/",(req,res)=>{
+    res.send({message:"server is running..."})
+})
 app.use("/api", integratedRoutes);
 
 app.use((request, response) => {

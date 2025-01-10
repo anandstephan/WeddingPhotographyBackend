@@ -45,4 +45,12 @@ integratedRoutes.use("/payments", verifyJwtToken, paymentRoute);
 /*-----------------------------------------transaction------------------------------------*/
 import transactionRouter from "./transaction.routes.js";
 integratedRoutes.use("/transaction", verifyJwtToken, transactionRouter);
+
+/*---------------------------------------purchased storage packages--------------------------------*/
+import purchasedPackageRoutes from "./purchasedPackage.routes.js";
+integratedRoutes.use(
+  "/purchased-package",
+  verifyJwtToken,
+  purchasedPackageRoutes
+);
 export default integratedRoutes;

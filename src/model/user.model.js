@@ -80,6 +80,10 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "photographer", "user"],
       required: true,
     },
+    permission:{
+      type: Array,
+      default: []
+    },
     address: addressSchema,
     password: {
       type: String,

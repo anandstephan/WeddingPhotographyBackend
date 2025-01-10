@@ -15,14 +15,14 @@ const photographerProfileSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    packageId: { type: mongoose.Schema.Types.ObjectId, ref: "Package" },
+    // packageId: { type: mongoose.Schema.Types.ObjectId, ref: "Package" },
     bio: String,
     experience: String,
     specializations: [String],
     portfolio: [portfolioItemSchema],
-    storageUsed: { type: Number, default: 0 }, // in GB
-    packageStartDate: Date,
-    packageEndDate: Date,
+    // storageUsed: { type: Number, default: 0 }, // in GB
+    // packageStartDate: Date,
+    // packageEndDate: Date,
     // rating: { type: Number, default: 0 },
     // reviewCount: { type: Number, default: 0 },
   },
