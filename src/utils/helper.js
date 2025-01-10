@@ -1,6 +1,7 @@
 import { User } from "../model/user.model.js";
 import mongoose from "mongoose";
-import crypto from 'crypto';
+import crypto from "crypto";
+import { transporter, mailOptions } from "../config/nodeMailerConfig.js";
 
 /*------------------------------------------to generate tokens-------------------------------------------*/
 const createAccessOrRefreshToken = async (user_id) => {
@@ -37,12 +38,12 @@ const sendMail = (receiverEmail, subject, htmlContent) => {
 
 /*------------------------------------------create transaction Id------------------------------------------*/
 const generateTransactionId = () => {
-  return "TXN_" + crypto.randomBytes(6).toString('hex').toUpperCase();
+  return "TXN_" + crypto.randomBytes(6).toString("hex").toUpperCase();
 };
 
 function extractS3KeyFromUrl(url) {
-  const s3Domain = 's3.ap-south-1.amazonaws.com';
-  const bucketName = 'wedding';
+  const s3Domain = "s3.ap-south-1.amazonaws.com";
+  const bucketName = "wedding";
 
   const regex = new RegExp(`https://${bucketName}\\.${s3Domain}/(.+)`);
   const match = url.match(regex);
@@ -51,7 +52,14 @@ function extractS3KeyFromUrl(url) {
     return decodeURIComponent(match[1]);
   }
 
-  throw new Error('Invalid S3 URL or mismatch with bucket domain');
+  throw new Error("Invalid S3 URL or mismatch with bucket domain");
 }
 
-export { createAccessOrRefreshToken, isValidObjectId, generateOTP, sendMail, generateTransactionId, extractS3KeyFromUrl }
+export {
+  createAccessOrRefreshToken,
+  isValidObjectId,
+  generateOTP,
+  sendMail,
+  generateTransactionId,
+  extractS3KeyFromUrl,
+};

@@ -27,17 +27,19 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!errors.isEmpty()) {
     return res.status(400).json(new ApiError(400, "Validation Error", errors));
   }
-
   const {
     name,
     email,
     mobile,
     role,
+    permission,
     isEmailVerified,
     isMobileVerified,
     password,
   } = req.body;
+  // if(role === "photographer") {
 
+  // }
   const query = {
     $or: [{ mobile }],
   };
@@ -47,8 +49,8 @@ const registerUser = asyncHandler(async (req, res) => {
   let isActive = true;
   if (role === "photographer") {
     isActive = false;
-  }
 
+  }
   const existedUser = await User.findOne(query);
   if (existedUser) {
     return res
@@ -74,6 +76,7 @@ const registerUser = asyncHandler(async (req, res) => {
       isEmailVerified,
       isMobileVerified,
       isActive,
+      permission,
       password: password || null,
       avatarUrl: avatarUrl,
     });

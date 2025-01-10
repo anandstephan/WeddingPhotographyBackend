@@ -6,9 +6,8 @@ const createAndStoreOtp = async (identifier, type) => {
     if (!["mobile", "email", "hybrid"].includes(type)) {
       throw new Error("Invalid OTP type. Use 'mobile', 'email', or 'hybrid'.");
     }
-
     // Generate OTP
-    const otpCode = "1234"; // Replace generateOTP() with actual generator
+    const otpCode = generateOTP(); // Replace generateOTP() with actual generator
     const otpData = { otp: otpCode, type };
 
     if (type === "mobile") otpData.mobile = identifier;
