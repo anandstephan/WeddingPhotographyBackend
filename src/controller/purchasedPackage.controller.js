@@ -8,6 +8,9 @@ import mongoose from "mongoose";
 
 const purchachedPackageCreate = asyncHandler(async (req, res) => {
   const { paymentDetails, transaction } = req;
+  console.log(paymentDetails, "paymentDetails");
+  console.log(transaction, "transaction");
+
   const user = req.user;
   transaction.paymentDetails = paymentDetails;
   transaction.paymentStatus = paymentDetails.paymentStatus;
@@ -38,7 +41,7 @@ const purchachedPackageCreate = asyncHandler(async (req, res) => {
   endDate = addMonths(startDate, storagePackage.duration);
   const newSubscribedPlan = await PurchasedPackage.create({
     userId: user._id,
-    packageId: transaction.subscription,
+    packageId: transaction.packageId,
     storageLimit: storagePackage.storageLimit,
     unit: storagePackage.unit,
     transactionId: transaction._id,
@@ -127,234 +130,125 @@ const getUserPurchasedPackages = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, packages[0], "Active packages fatched"));
 });
 
-// Get purchased packageData details by ID
-export const getPurchasedPackageById = async (req, res) => {
-  try {
-    const packageData = await PurchasedPackage.findById(req.params.id)
-      .populate("packageId")
-      .populate("photographerId", "name email profileImage")
-      .populate("userId", "name email")
-      .populate("transactionId");
+/*--------------------- Get purchased packageData details by ID---------------------*/
+const getPurchasedPackageById = asyncHandler(async (req, res) => {
+  const packageData = await PurchasedPackage.findById(req.params.id)
+    .populate("packageId")
+    .populate("userId", "-password -refreshToken")
+    .populate("transactionId");
 
-    if (!packageData) {
-      return res.status(404).json({
-        success: false,
-        error: "Purchased packageData not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: packageData,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
+  if (!packageData) {
+    throw new ApiError(404, "Purchased packageData not found");
   }
-};
 
-// Update purchased packageData status
-export const updatePackageStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const packageData = await PurchasedPackage.findById(req.params.id);
-    if (!packageData) {
-      return res.status(404).json({
-        success: false,
-        error: "Purchased packageData not found",
-      });
-    }
+  res
+    .status(200)
+    .json(new ApiResponse(200, packageData, "package fatched successfully"));
+});
 
-    // Check if the status transition is valid
-    const validTransitions = {
-      active: ["completed", "cancelled"],
-      completed: [], // completed is final state
-      cancelled: [], // cancelled is final state
-    };
+/*------------------------------------ Get purchased package list------------------------------------*/
+const getPurchasedPackageList = asyncHandler(async (req, res) => {
+  const { name, page = 1, limit = 10 } = req.query;
 
-    if (!validTransitions[packageData.status].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        error: `Cannot transition from ${packageData.status} to ${status}`,
-      });
-    }
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
 
-    packageData.status = status;
-    await packageData.save();
+  const matchStage = {
+    $match: {
+      isActive: true,
+    },
+  };
 
-    res.status(200).json({
-      success: true,
-      data: packageData,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
-  }
-};
+  const lookupStages = [
+    {
+      $lookup: {
+        from: "packages",
+        localField: "packageId",
+        foreignField: "_id",
+        as: "packageDetails",
+      },
+    },
+    {
+      $unwind: {
+        path: "$packageDetails",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "userDetails",
+      },
+    },
+    {
+      $unwind: {
+        path: "$userDetails",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "transactions",
+        localField: "transactionId",
+        foreignField: "_id",
+        as: "transactionDetails",
+      },
+    },
+    {
+      $unwind: {
+        path: "$transactionDetails",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+  ];
 
-// Update delivered photos count
-export const updateDeliveredPhotos = async (req, res) => {
-  try {
-    const { deliveredCount } = req.body;
-    const packageData = await PurchasedPackage.findById(req.params.id);
+  const projectStage = {
+    $project: {
+      "userDetails.password": 0,
+      "userDetails.refreshToken": 0,
+    },
+  };
 
-    if (!packageData) {
-      return res.status(404).json({
-        success: false,
-        error: "Purchased packageData not found",
-      });
-    }
-
-    if (packageData.status !== "active") {
-      return res.status(400).json({
-        success: false,
-        error: "Can only update photos for active packages",
-      });
-    }
-
-    if (deliveredCount > packageData.photosRemaining) {
-      return res.status(400).json({
-        success: false,
-        error: "Delivered count exceeds remaining photos",
-      });
-    }
-
-    packageData.photosDelivered += deliveredCount;
-    packageData.photosRemaining -= deliveredCount;
-
-    // Automatically complete packageData if all photos are delivered
-    if (packageData.photosRemaining === 0) {
-      packageData.status = "completed";
-    }
-
-    await packageData.save();
-
-    res.status(200).json({
-      success: true,
-      data: packageData,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
-  }
-};
-
-// Get photographer's active packages
-export const getPhotographerActivePackages = async (req, res) => {
-  try {
-    const photographerId = req.params.photographerId;
-    const packages = await PurchasedPackage.find({
-      photographerId,
-      status: "active",
-    })
-      .populate("packageId")
-      .populate("userId", "name email profileImage")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      data: packages,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
-  }
-};
-
-// Extend packageData expiry date
-export const extendPackageExpiry = async (req, res) => {
-  try {
-    const { extensionDays } = req.body;
-    const packageData = await PurchasedPackage.findById(req.params.id);
-
-    if (!packageData) {
-      return res.status(404).json({
-        success: false,
-        error: "Purchased packageData not found",
-      });
-    }
-
-    if (packageData.status !== "active") {
-      return res.status(400).json({
-        success: false,
-        error: "Can only extend active packages",
-      });
-    }
-
-    // Maximum extension limit of 30 days
-    if (extensionDays > 30) {
-      return res.status(400).json({
-        success: false,
-        error: "Maximum extension period is 30 days",
-      });
-    }
-    packageData.expiryDate = new Date(
-      packageData.expiryDate.getTime() + extensionDays * 24 * 60 * 60 * 1000
-    );
-    await packageData.save();
-
-    res.status(200).json({
-      success: true,
-      data: packageData,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
-  }
-};
-
-// Get packageData statistics for a photographer
-export const getPhotographerPackageStats = async (req, res) => {
-  try {
-    const photographerId = req.params.photographerId;
-
-    const stats = await PurchasedPackage.aggregate([
-      {
+  const nameFilterStage = name
+    ? {
         $match: {
-          photographerId: mongoose.Types.ObjectId(photographerId),
+          "userDetails.name": { $regex: name, $options: "i" },
         },
-      },
-      {
-        $group: {
-          _id: "$status",
-          count: { $sum: 1 },
-          totalPhotosDelivered: { $sum: "$photosDelivered" },
-        },
-      },
-    ]);
+      }
+    : null;
 
-    const formattedStats = {
-      active: 0,
-      completed: 0,
-      cancelled: 0,
-      totalPhotosDelivered: 0,
-    };
+  const paginationStages = [
+    { $skip: (pageNumber - 1) * limitNumber },
+    { $limit: limitNumber },
+  ];
 
-    stats.forEach((stat) => {
-      formattedStats[stat._id] = stat.count;
-      formattedStats.totalPhotosDelivered += stat.totalPhotosDelivered;
-    });
+  const pipeline = [matchStage, ...lookupStages, projectStage];
+  if (nameFilterStage) pipeline.push(nameFilterStage);
+  pipeline.push(...paginationStages);
+  const packageList = await PurchasedPackage.aggregate(pipeline);
 
-    res.status(200).json({
-      success: true,
-      data: formattedStats,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: error.message,
-    });
-  }
+  const totalPackages = await PurchasedPackage.countDocuments({
+    isActive: true,
+    ...(name ? { "userDetails.name": { $regex: name, $options: "i" } } : {}),
+  });
+
+  res.status(200).json({
+    success: true,
+    data: packageList,
+    pagination: {
+      currentPage: pageNumber,
+      totalPages: totalPackages,
+      totalItems: Math.ceil(totalPackages / limitNumber),
+      itemsPerPage: limitNumber,
+    },
+  });
+});
+
+export {
+  purchachedPackageCreate,
+  getUserPurchasedPackages,
+  getPurchasedPackageById,
+  getPurchasedPackageList,
 };
-
-export { purchachedPackageCreate, getUserPurchasedPackages };
